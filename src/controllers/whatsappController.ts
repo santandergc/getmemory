@@ -140,10 +140,10 @@ async function handleIncomingMessage(req: Request, res: Response) {
 
     let response;
 
-    if (user.stage === STAGES.ONBOARDING) {
+    if (user.currentStage === STAGES.ONBOARDING) {
       response = await handleOnboarding(user, processedMessage); 
-    } else if (user.stage === STAGES.INFANCIA) {
-      const chatHistory = user.chatHistory;
+    } else if (user.currentStage === STAGES.INFANCIA) {
+      const chatHistory = user.stages.find(stage => stage.name === STAGES.INFANCIA)?.chatHistory || [];
       response = await handleInfancia(user, processedMessage, chatHistory);
     }
 

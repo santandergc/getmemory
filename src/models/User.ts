@@ -6,17 +6,26 @@ interface IChatMessage {
   timestamp: Date;
 }
 
+interface IStage {
+  name: string; // Nombre de la etapa (ej. "infancia", "adolescencia")
+  chatHistory: IChatMessage[]; // Historial de mensajes para la etapa
+  summary: string; // Resumen acumulado de la etapa
+  isCompleted: boolean; // Si la etapa está completada
+  messageCounter: number; // Contador para cada 5 mensajes
+  validators: string[]; // Agregamos este campo
+  completedCounter: number; // Contador para cada 3 etapas completadas
+}
+
 interface IUser extends Document {
-  whatsappNumber: string;
-  stage: string;
-  currentQuestion: number;
-  fullName?: string;
-  birthInfo?: string;
-  chatHistory: IChatMessage[];
+  whatsappNumber: string; // Número de WhatsApp del usuario
+  currentStage: string; // Etapa actual del usuario
+  currentQuestion: number; // Pregunta actual del usuario
+  stages: IStage[]; // Lista de etapas del usuario
+  fullName?: string; // Nombre completo del usuario
+  birthInfo?: string; // Información sobre el nacimiento del usuario
   createdAt: Date;
   updatedAt: Date;
 }
-
 const chatMessageSchema = new Schema<IChatMessage>({
   message: {
     type: String,
@@ -24,14 +33,46 @@ const chatMessageSchema = new Schema<IChatMessage>({
   },
   type: {
     type: String,
-    enum: ['incoming', 'outgoing'],
+    enum: ['incoming', 'outgoing'], 
     required: true,
   },
   timestamp: {
     type: Date,
     default: Date.now,
   },
-});
+}, { _id: false });
+
+const stageSchema = new Schema<IStage>({
+  name: {
+    type: String,
+    required: true,
+    enum: ['infancia', 'adolescencia', 'adultez', 'vejez'],
+  },
+  chatHistory: {
+    type: [chatMessageSchema],
+    default: [],
+  },
+  summary: {
+    type: String,
+    default: '',
+  },
+  isCompleted: {
+    type: Boolean,
+    default: false,
+  },
+  completedCounter: {
+    type: Number,
+    default: 0,
+  },
+  messageCounter: {
+    type: Number,
+    default: 0,
+  },
+  validators: {
+    type: [String],
+    default: [],
+  },
+}, { _id: false });
 
 const userSchema = new Schema<IUser>(
   {
@@ -41,15 +82,15 @@ const userSchema = new Schema<IUser>(
       unique: true,
       trim: true,
     },
-    stage: {
+    currentStage: {
       type: String,
       required: true,
-      enum: ['onboarding', 'infancia', 'chat'],
+      enum: ['onboarding', 'infancia', 'adolescencia', 'adultez', 'vejez'],
       default: 'onboarding',
     },
-    currentQuestion: {
-      type: Number,
-      required: true,
+    stages: {
+      type: [stageSchema],
+      default: [],
     },
     fullName: {
       type: String,
@@ -59,13 +100,13 @@ const userSchema = new Schema<IUser>(
       type: String,
       trim: true,
     },
-    chatHistory: {
-      type: [chatMessageSchema],
-      default: [],
+    currentQuestion: {
+      type: Number,
+      default: 0,
     },
   },
   {
-    timestamps: true, // Automatically adds `createdAt` and `updatedAt` fields
+    timestamps: true, // Agrega automáticamente los campos `createdAt` y `updatedAt`
   }
 );
 
