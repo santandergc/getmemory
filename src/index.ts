@@ -1,2 +1,6 @@
 import dotenv from 'dotenv';
-dotenv.config(); 
+// Elimina dotenv del caché de require
+delete require.cache[require.resolve('dotenv')];
+
+// Vuelve a cargar dotenv
+require('dotenv').config();
