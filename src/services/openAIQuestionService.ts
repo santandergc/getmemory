@@ -38,10 +38,12 @@ export const generateQuestionResponse = async ({
   summary,
   history,
   message,
+  sendTemplate,
 }: {
   summary: string;
   history: string[]; // Últimos 2 mensajes del historial [penúltimo del usuario, último del bot]
   message: string; // Mensaje más reciente del usuario
+  sendTemplate: boolean; // Indica si se debe enviar el template de WhatsApp, para que LLM tenga contexto de que ya se completó la pregunta
 }): Promise<string> => {
 
   let userPrompt = `
@@ -66,7 +68,9 @@ export const generateQuestionResponse = async ({
           - Mantén un tono cálido, curioso y amigable, evitando abrumar con demasiados temas.
           - Ayuda al usuario a organizar sus ideas si menciona varios temas dispersos, conectándolos de forma natural.
           - No te excedas con la cantidad de preguntas. No abrumes con tanto texto.
-
+          - Si sendTemplate es true, significa que el usuario tiene la opción de pasar a la siguiente pregunta. En este caso, mantén el mensaje breve y conciso, sin profundizar demasiado, para darle espacio a decidir si quiere continuar o no.
+          -- sendTemplate: ${sendTemplate}
+          
         EJEMPLO: 
 
         USUARIO: "Claro, me acuerdo que cuando chico siempre jugaba con la bicicleta y me encantaba ir a jugar a un bosque allá cerca de la casa. Cuando chico yo vivía en una casa en un sector llamado Esmeralda. Vivía con mis tíos, con mi mamá, con mi hermano y con mis primos. Era una locura porque siempre jugábamos Eran muchos primos, una familia muy unida. " 

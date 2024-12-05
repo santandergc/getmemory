@@ -51,9 +51,8 @@ export async function handleIncomingMessage(req: Request, res: Response) {
       }
 
       // Delegate to stage-specific handler
-      const response = await QuestionService.handleStage(user, processedMessage);
+      await QuestionService.handleStage(user, processedMessage);
       await user.save();
-      if (response) await sendWhatsAppMessage(whatsappNumber, response);
 
       res.status(200).send({ success: true, message: 'Mensaje procesado correctamente' });
     } catch (error) {

@@ -90,6 +90,21 @@ export class QuestionService {
     if (!currentQuestion) {
       return 'No hay una pregunta actual configurada. Por favor, contacta con soporte.';
     }
+
+    if (message === 'Seguir escribiendo') {
+      // Continuar con la misma pregunta y flujo de generación de respuesta
+      await sendWhatsAppMessage(user.whatsappNumber, '¡Genial! Sigamos 💭✨');
+      return '';
+    } else if (message === 'Siguiente pregunta') {
+      user.currentQuestionId++;
+      await user.save();
+      await sendWhatsAppMessage(user.whatsappNumber, '¡Excelente! Ahora vamos a la siguiente pregunta. \n\n¿Estás listo/a para continuar?💫✨');
+      return '';
+    } else if (message === 'Terminar por hoy') {
+      // aca enviamos el template de agradecimiento y despedida. y que nos vemos en la siguiente sesión
+      await sendWhatsAppMessage(user.whatsappNumber, '¡Gracias por tu tiempo! Nos vemos en la próxima sesión. \n\n¡Que tengas un excelente día!😊');
+      return '';
+    }
   
     // Agregar el mensaje recibido al historial de la pregunta
     currentQuestion.conversationHistory.push({
@@ -113,22 +128,22 @@ export class QuestionService {
 
     currentQuestion.wordCount += message.trim().split(/\s+/).length;
   
+    let sendTemplate = false;
     // Validar si alcanza las 1000 palabras
-    if (currentQuestion.wordCount >= 1000) {
-      // Actualizar estado de completitud
-      currentQuestion.isCompleted = true;
+    if (currentQuestion.wordCount >= 500 && !currentQuestion.isCompleted) {
+     // Actualizar estado de completitud
+     currentQuestion.isCompleted = true;
+     sendTemplate = true;
+     currentQuestion.completedCountMessages++;
       await user.save();
-  
-      await sendTemplateMessage(user.whatsappNumber);
-  
-      return '';
     }
-  
+    
     // Si no se ha completado, continuar la conversación
     const aiResponse = await generateQuestionResponse({
       summary: currentQuestion.summary || '',
       history: currentQuestion.conversationHistory.slice(-3), // Últimos 3 mensajes
       message: message,
+      sendTemplate: sendTemplate,
     });
   
     // Agregar respuesta del bot al historial
@@ -137,7 +152,23 @@ export class QuestionService {
       type: 'outgoing',
       timestamp: new Date(),
     });
-  
+
+
+    
+
+    if (aiResponse) await sendWhatsAppMessage(user.whatsappNumber, aiResponse);
+
+
+    if (currentQuestion.isCompleted && currentQuestion.completedCountMessages % 5 === 0) {
+      sendTemplate = true;
+    }
+
+    if (currentQuestion.isCompleted) currentQuestion.completedCountMessages++;
+
+    if (sendTemplate) await sendTemplateMessage(user.whatsappNumber);
+
+    await user.save();
+
     return aiResponse;
   }
 

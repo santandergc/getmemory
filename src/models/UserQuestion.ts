@@ -13,6 +13,8 @@ interface IUserQuestion {
   conversationHistory: IConversationMessage[]; // Historial de la conversación para esta pregunta
   wordCount: number; // Conteo acumulado de palabras de las respuestas del usuario
   isCompleted: boolean; // Si la pregunta fue completada
+  completedCountMessages: number; // Cantidad de mensajes enviados para completar la pregunta
+
 }
 
 interface IUser extends Document {
@@ -71,6 +73,10 @@ const userQuestionSchema = new Schema<IUserQuestion>({
   isCompleted: {
     type: Boolean,
     default: false,
+  },
+  completedCountMessages: {
+    type: Number,
+    default: 0,
   },
 }, { _id: false })
 
