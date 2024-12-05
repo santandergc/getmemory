@@ -1,5 +1,4 @@
 import express from 'express';
-import { handleIncomingMessage } from '../controllers/stageController';
 import { handleIncomingMessage as handleQuestionMessage } from '../controllers/whatsappQuestionController';
 
 const router = express.Router();
