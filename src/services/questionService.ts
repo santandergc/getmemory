@@ -2,7 +2,6 @@ import User from '../models/UserQuestion';
 import Question from '../models/Question';
 import { generateQuestionMessage, generateQuestionResponse } from './openAIQuestionService';
 import { sendTemplateMessage, sendWhatsAppMessage } from './whatsappService';
-import { transcribeAudio } from './whisperService';
 
 export class QuestionService {
   /**
@@ -10,7 +9,6 @@ export class QuestionService {
    */
   static async initializeUser(whatsappNumber: string) {
     const questions = await Question.find().sort({ questionId: 1 }); // Asegura que estén en orden
-    console.log(questions);
     const user = new User({
       whatsappNumber,
       fullName: '',
@@ -39,6 +37,7 @@ export class QuestionService {
    * Maneja la lógica para cada etapa según la etapa actual del usuario.
    */
   static async handleStage(user: any, message: string): Promise<string> {
+    console.log(message);
     switch (user.currentStage) {
       case 'onboarding':
         return this.handleOnboarding(user, message);
@@ -71,7 +70,8 @@ export class QuestionService {
 
     if (currentQuestion < questions.length) {
       user.currentQuestion++;
-      return questions[currentQuestion];
+      await sendWhatsAppMessage(user.whatsappNumber, questions[currentQuestion]);
+      return '';
     }
 
     // Si Onboarding está completo, transicionar a Infancia
@@ -79,7 +79,8 @@ export class QuestionService {
     user.currentQuestion = 0;
     await user.save();
     
-    return `Genial, ahora vamos a empezar con la primera pregunta! \n\n🥁 *Redoble de tambores* 🥁 Prepárate para un viaje lleno de recuerdos especiales.\n\n¿Estás listo/a para comenzar?💫✨`;
+    await sendWhatsAppMessage(user.whatsappNumber, `Genial, ahora vamos a empezar con la primera pregunta! \n\n🥁 *Redoble de tambores* 🥁 Prepárate para un viaje lleno de recuerdos especiales.\n\n¿Estás listo/a para comenzar?💫✨`);
+    return '';
   }
 
   static async handleQuestions(user: any, message: string): Promise<string> {
@@ -88,7 +89,8 @@ export class QuestionService {
   
     // Si no hay pregunta actual, significa que no está inicializado correctamente
     if (!currentQuestion) {
-      return 'No hay una pregunta actual configurada. Por favor, contacta con soporte.';
+      await sendWhatsAppMessage(user.whatsappNumber, 'No hay una pregunta actual configurada. Por favor, contacta con soporte.');
+      return '';
     }
 
     if (message === 'Seguir escribiendo') {
@@ -113,17 +115,20 @@ export class QuestionService {
       timestamp: new Date(),
     });
 
+    console.log(currentQuestion.wordCount);
+
 
     if (currentQuestion.wordCount === 0) {
       // Se envia la pregunta al usuario
-      const questionMessage = await generateQuestionMessage(currentQuestion.text);
+      const questionMessage = await generateQuestionMessage(currentQuestion.text, currentQuestion.questionId);
       currentQuestion.conversationHistory.push({
         message: questionMessage,
         type: 'outgoing',
         timestamp: new Date(),
       });
       currentQuestion.wordCount += message.trim().split(/\s+/).length;
-      return questionMessage;
+      await sendWhatsAppMessage(user.whatsappNumber, questionMessage);
+      return '';
     }
 
     currentQuestion.wordCount += message.trim().split(/\s+/).length;
@@ -140,10 +145,10 @@ export class QuestionService {
     
     // Si no se ha completado, continuar la conversación
     const aiResponse = await generateQuestionResponse({
+      question: currentQuestion.text,
       summary: currentQuestion.summary || '',
       history: currentQuestion.conversationHistory.slice(-3), // Últimos 3 mensajes
       message: message,
-      sendTemplate: sendTemplate,
     });
   
     // Agregar respuesta del bot al historial

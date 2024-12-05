@@ -7,7 +7,7 @@ interface IConversationMessage {
 }
 
 interface IUserQuestion {
-  questionId: string; // ID único de la pregunta
+  questionId: number; // ID único de la pregunta
   text: string; // Texto de la pregunta
   summary: string; // Resumen de la pregunta
   conversationHistory: IConversationMessage[]; // Historial de la conversación para esta pregunta
@@ -23,15 +23,17 @@ interface IUser extends Document {
   birthInfo: string; // Fecha de nacimiento (ej. '2000-05-23')
   currentQuestion: number; // ID de la pregunta actual
   currentQuestionId: number; // ID de la pregunta actual
-  currentStage: string; // ID de la pregunta actual
-  preferences: {
-    questionFrequency: 'daily' | 'weekly'; // Frecuencia de las preguntas
-    questionTime: string; // Hora de las preguntas (ej. '08:00')
+  currentStage: string; // Etapa actual del usuario
+  schedule: {
+    time: string; // Hora de envío (formato 'HH:mm', ej. '08:00')
+    days: string[]; // Días de envío (ej. ['Monday', 'Friday'] para semanal, o ['Monday', 'Tuesday', 'Wednesday'] para diario)
+    timezone: string; // Zona horaria en formato IANA (ej. 'America/Mexico_City')
   };
   questions: IUserQuestion[]; // Lista de preguntas asociadas al usuario
   createdAt: Date; // Fecha de creación del usuario
   updatedAt: Date; // Última actualización del usuario
 }
+
 
 const conversationMessageSchema = new Schema<IConversationMessage>({
   message: {
@@ -51,7 +53,7 @@ const conversationMessageSchema = new Schema<IConversationMessage>({
 
 const userQuestionSchema = new Schema<IUserQuestion>({
   questionId: {
-    type: String,
+    type: Number,
     required: true,
   },
   text: {
@@ -108,16 +110,19 @@ const userSchema = new Schema<IUser>(
       type: String,
       default: 'onboarding',
     },
-    preferences: {
-      questionFrequency: {
+    schedule: {
+      time: { 
         type: String,
-        enum: ['daily', 'weekly'],
-        default: 'daily',
+        default: '',
       },
-      questionTime: {
+      days: {
+        type: [String],
+        default: [],
+      },
+      timezone: {
         type: String,
-        default: '08:00',
-      },
+        default: '',
+      }
     },
     questions: {
       type: [userQuestionSchema],

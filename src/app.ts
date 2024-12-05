@@ -24,7 +24,12 @@ connectDB();
 // Puerto
 const PORT = process.env.PORT || 3000;
 
+// Importar el servicio de mensajes programados
+import { ScheduledMessageService } from './services/scheduledMessageService';
+
 // Iniciar servidor
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en puerto ${PORT}`);
+  // Iniciar el scheduler
+  ScheduledMessageService.initScheduler();
 }); 
