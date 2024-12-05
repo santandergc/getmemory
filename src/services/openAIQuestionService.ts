@@ -65,6 +65,18 @@ export const generateQuestionResponse = async ({
           - Formula preguntas específicas pero abiertas que ayuden a explorar recuerdos más detallados o emociones relacionadas.
           - Mantén un tono cálido, curioso y amigable, evitando abrumar con demasiados temas.
           - Ayuda al usuario a organizar sus ideas si menciona varios temas dispersos, conectándolos de forma natural.
+          - No te excedas con la cantidad de preguntas. No abrumes con tanto texto.
+
+        EJEMPLO: 
+
+        USUARIO: "Claro, me acuerdo que cuando chico siempre jugaba con la bicicleta y me encantaba ir a jugar a un bosque allá cerca de la casa. Cuando chico yo vivía en una casa en un sector llamado Esmeralda. Vivía con mis tíos, con mi mamá, con mi hermano y con mis primos. Era una locura porque siempre jugábamos Eran muchos primos, una familia muy unida. " 
+        RESPUESTA_ESPERADA: "¡Qué bonito recordar esos tiempos en Esmeralda! Suena como si tu infancia estuviera llena de alegría, aventuras y momentos especiales junto a tus primos. 🌳✨
+        La bicicleta y el bosque deben haber sido un escenario perfecto para risas y travesuras. ¿Recuerdas alguna anécdota divertida o juego que haya dejado una huella especial en ti? 🚴‍♂️😊"
+
+        EJEMPLO 2: 
+
+        CONTEXTO: "si el usuario comenta que esta perdido, o que no entendio el flujo de la conversación, o que no sabe que hacer, o que no entiende el checklist, etc."
+        RESPUESTA_ESPERADA: "¡No te preocupes! Estoy aquí para ayudarte.  🌐"
   `;
 
   console.log(userPrompt);

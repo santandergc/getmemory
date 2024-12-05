@@ -1,7 +1,7 @@
 import User from '../models/UserQuestion';
 import Question from '../models/Question';
 import { generateQuestionMessage, generateQuestionResponse } from './openAIQuestionService';
-import { sendWhatsAppMessage } from './whatsappService';
+import { sendTemplateMessage, sendWhatsAppMessage } from './whatsappService';
 import { transcribeAudio } from './whisperService';
 
 export class QuestionService {
@@ -119,17 +119,9 @@ export class QuestionService {
       currentQuestion.isCompleted = true;
       await user.save();
   
-      // Enviar opciones al usuario USAR TWILIO BUTTONS
-      const optionsMessage = `
-        ¡Gracias por compartir tantos detalles sobre esta pregunta! 📝
-        Con esta información, creo que tenemos mucho para guardar.
-        ¿Qué te gustaría hacer ahora?
-        1️⃣ Pasar a la siguiente pregunta.
-        2️⃣ Terminar por hoy.
-        3️⃣ Seguir escribiendo sobre esta pregunta.
-      `;
+      await sendTemplateMessage(user.whatsappNumber);
   
-      return optionsMessage;
+      return '';
     }
   
     // Si no se ha completado, continuar la conversación

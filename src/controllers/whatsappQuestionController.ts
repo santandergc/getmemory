@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import User from '../models/UserQuestion';
-import { sendWhatsAppMessage } from '../services/whatsappService';
+import { sendTemplateMessage, sendWhatsAppMessage } from '../services/whatsappService';
 import { QuestionService } from '../services/questionService';
 import { transcribeAudio } from '../services/whisperService';
 
@@ -23,6 +23,7 @@ export async function handleIncomingMessage(req: Request, res: Response) {
         });
       }
 
+      
       const whatsappNumber = from.replace('whatsapp:', '');
       const isAudioMessage = mediaContentType === 'audio/ogg' && NumMedia === '1';
 
