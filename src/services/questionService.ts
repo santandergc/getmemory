@@ -27,7 +27,7 @@ export class QuestionService {
     await user.save();
 
     const welcomeMessage =
-      "¡Hola! Soy Memori 🥸\n\nEstoy aquí para ayudarte a transformar tus recuerdos en un legado lleno de emociones y momentos únicos 🌎. ¿Te gustaría empezar este viaje juntos?";
+      "¡Hola! Soy Memori 🥸\n\nEstoy aquí para ayudarte a transformar tus recuerdos en un legado lleno de emociones y momentos únicos 🌎. Crearemos juntos tu mini biografía a partir de preguntas interactivas sobre tu vida. \n\n ¿Te gustaría empezar este viaje juntos?";
     await sendWhatsAppMessage(whatsappNumber, welcomeMessage);
 
     return user;
@@ -80,6 +80,7 @@ export class QuestionService {
     await user.save();
     
     await sendWhatsAppMessage(user.whatsappNumber, `Genial, ahora vamos a empezar con la primera pregunta! \n\n🥁 *Redoble de tambores* 🥁 Prepárate para un viaje lleno de recuerdos especiales.\n\n¿Estás listo/a para comenzar?💫✨`);
+    await sendWhatsAppMessage(user.whatsappNumber, `Me puedes responder con texto ✍️ o enviar un audio 🎤. Lo que más te acomode.`);
     return '';
   }
 
@@ -135,7 +136,7 @@ export class QuestionService {
   
     let sendTemplate = false;
     // Validar si alcanza las 1000 palabras
-    if (currentQuestion.wordCount >= 500 && !currentQuestion.isCompleted) {
+    if (currentQuestion.wordCount >= 250 && !currentQuestion.isCompleted) {
      // Actualizar estado de completitud
      currentQuestion.isCompleted = true;
      sendTemplate = true;
