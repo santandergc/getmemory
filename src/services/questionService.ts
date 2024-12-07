@@ -79,8 +79,8 @@ export class QuestionService {
     user.currentQuestion = 0;
     await user.save();
     
-    await sendWhatsAppMessage(user.whatsappNumber, `Genial, ahora vamos a empezar con la primera pregunta! \n\n🥁 *Redoble de tambores* 🥁 Prepárate para un viaje lleno de recuerdos especiales.\n\n¿Estás listo/a para comenzar?💫✨`);
-    await sendWhatsAppMessage(user.whatsappNumber, `Me puedes responder con texto ✍️ o enviar un audio 🎤. Lo que más te acomode.`);
+    await sendWhatsAppMessage(user.whatsappNumber, `Genial, ahora vamos a empezar con la primera pregunta! \n\n🥁 *Redoble de tambores* 🥁 Prepárate para un viaje lleno de recuerdos especiales.\n\nMe puedes responder con texto ✍️ o enviar un audio 🎤. Lo que más te acomode.`);
+    await sendWhatsAppMessage(user.whatsappNumber, `¿Estás listo/a para comenzar?💫✨`);
     return '';
   }
 
