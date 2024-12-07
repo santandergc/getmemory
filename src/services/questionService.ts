@@ -27,7 +27,7 @@ export class QuestionService {
     await user.save();
 
     const welcomeMessage =
-      "¡Hola! Soy Bernandita, de Memori. 😊 \nEstoy aquí para ayudarte a transformar tus recuerdos en un legado lleno de emociones y momentos únicos 🌎. ¿Te gustaría empezar este viaje juntos?";
+      "¡Hola! Soy Memori 🥸\n\nEstoy aquí para ayudarte a transformar tus recuerdos en un legado lleno de emociones y momentos únicos 🌎. ¿Te gustaría empezar este viaje juntos?";
     await sendWhatsAppMessage(whatsappNumber, welcomeMessage);
 
     return user;
