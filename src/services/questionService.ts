@@ -148,7 +148,7 @@ export class QuestionService {
     const aiResponse = await generateQuestionResponse({
       question: currentQuestion.text,
       summary: currentQuestion.summary || '',
-      history: currentQuestion.conversationHistory.slice(-3), // Últimos 3 mensajes
+      history: currentQuestion.conversationHistory.slice(-5), // Últimos 3 mensajes
       message: message,
     });
   
