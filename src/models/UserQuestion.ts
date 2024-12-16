@@ -14,7 +14,7 @@ interface IUserQuestion {
   wordCount: number; // Conteo acumulado de palabras de las respuestas del usuario
   isCompleted: boolean; // Si la pregunta fue completada
   completedCountMessages: number; // Cantidad de mensajes enviados para completar la pregunta
-
+  messageCounter: number; // Contador de mensajes para resumen
 }
 
 interface IUser extends Document {
@@ -77,6 +77,10 @@ const userQuestionSchema = new Schema<IUserQuestion>({
     default: false,
   },
   completedCountMessages: {
+    type: Number,
+    default: 0,
+  },
+  messageCounter: {
     type: Number,
     default: 0,
   },

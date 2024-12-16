@@ -1,14 +1,14 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IQuestion extends Document {
-  questionId: string; // Identificador único de la pregunta
+  questionId: number; // Identificador único de la pregunta
   category: string; // Categoría de la pregunta
   text: string; // Texto de la pregunta
 }
 
 const QuestionSchema: Schema = new Schema({
   questionId: {
-    type: String,
+    type: Number,
     required: true,
     unique: true,
   },

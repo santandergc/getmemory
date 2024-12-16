@@ -1,13 +1,21 @@
 import dotenv from 'dotenv';
+import cors from 'cors';
 // Configurar dotenv antes de cualquier otra importación
 dotenv.config();
 
 import express from 'express';
 import { connectDB } from './config/db';
 import whatsappRoutes from './routes/whatsappRoutes';
+import './config/firebase'; // Importar al inicio para asegurar la inicialización
 
 // Inicializar Express
 const app = express();
+
+// Configurar CORS para permitir conexiones locales
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://localhost:5173'],
+  credentials: true
+}));
 
 // Middleware para parsear JSON
 app.use(express.json());
@@ -16,7 +24,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Rutas
-app.use('/api/whatsapp', whatsappRoutes);
+app.use('/api', whatsappRoutes);
 
 // Conectar a la base de datos
 connectDB();
