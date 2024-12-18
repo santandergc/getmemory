@@ -1,6 +1,6 @@
 import User from '../models/UserQuestion';
 import Question from '../models/Question';
-import { generateQuestionMessage, generateQuestionResponse } from './openAIQuestionService';
+import { filterGenerateQuestionResponse, generateQuestionMessage, generateQuestionResponse, summarizeConversationHistory } from './openAIQuestionService';
 import { sendTemplateMessage, sendWhatsAppMessage } from './whatsappService';
 
 export class QuestionService {
@@ -116,7 +116,24 @@ export class QuestionService {
       timestamp: new Date(),
     });
 
-    console.log(currentQuestion.wordCount);
+
+    currentQuestion.messageCounter++;
+    // Si se alcanza el contador de 5 mensajes, generar resumen y validar
+    if (currentQuestion.messageCounter >= 5) {
+      console.log('join')
+      const lastFiveMessages = currentQuestion.conversationHistory.slice(-5);
+      console.log(lastFiveMessages)
+
+      // GENERAR RESUMEN
+      if (lastFiveMessages.length > 0) {
+        const response = await summarizeConversationHistory(lastFiveMessages);
+        console.log('rsp',response)
+        // ACTUALIZAR SUMMARY
+        currentQuestion.summary += `\n- ${response}`;
+        currentQuestion.messageCounter = 0;
+      }
+    }
+    console.log('join2')
 
 
     if (currentQuestion.wordCount === 0) {
@@ -131,7 +148,7 @@ export class QuestionService {
       await sendWhatsAppMessage(user.whatsappNumber, questionMessage);
       return '';
     }
-
+    console.log('1')
     currentQuestion.wordCount += message.trim().split(/\s+/).length;
   
     let sendTemplate = false;
@@ -144,13 +161,22 @@ export class QuestionService {
       await user.save();
     }
     
-    // Si no se ha completado, continuar la conversación
-    const aiResponse = await generateQuestionResponse({
+    console.log('2')
+    const response = await generateQuestionResponse({
       question: currentQuestion.text,
       summary: currentQuestion.summary || '',
-      history: currentQuestion.conversationHistory.slice(-3), // Últimos 3 mensajes
+      history: currentQuestion.conversationHistory.slice(-5), 
       message: message,
     });
+    console.log(response);
+    const aiResponse = await filterGenerateQuestionResponse({
+      question: currentQuestion.text,
+      summary: currentQuestion.summary || '',
+      history: currentQuestion.conversationHistory.slice(-5),
+      message: message,
+      aiResponse: response,
+    });
+    console.log(aiResponse);
   
     // Agregar respuesta del bot al historial
     currentQuestion.conversationHistory.push({
