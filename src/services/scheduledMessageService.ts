@@ -1,13 +1,13 @@
 import cron from 'node-cron';
 import moment from 'moment-timezone';
 import User from '../models/UserQuestion'; // Modelo de usuarios
-import { sendWhatsAppMessage } from './whatsappService'; // Servicio para enviar mensajes por WhatsApp
+import { sendWhatsAppMessage, sendWhatsAppVideo } from './whatsappService'; // Servicio para enviar mensajes por WhatsApp
 import { generateContinueMessage, generateNextQuestionMessage } from './openAIQuestionService';
 
 export class ScheduledMessageService {
   // Inicializa el scheduler para ejecutar cada minuto
   static initScheduler() {
-    cron.schedule('0 * * * *', async () => {
+    cron.schedule('*/1 * * * *', async () => {
       try {
         console.log('Ejecutando verificación de mensajes programados...');
         await ScheduledMessageService.checkScheduledMessages();
@@ -22,18 +22,22 @@ export class ScheduledMessageService {
     const now = moment();
 
     const activeUsers = await User.find({
-      'schedule.time': { $exists: true },
-      'schedule.days': { $exists: true },
-      'schedule.timezone': { $exists: true },
-      whatsappNumber: { $exists: true, $ne: null },
+      'schedule.time': { $exists: true, $ne: '' },
+      'schedule.days': { $exists: true, $ne: '' },
+      'schedule.timezone': { $exists: true, $ne: '' },
+      'schedule.active': { $exists: true, $ne: false },
+      whatsappNumber: { $exists: true, $ne: null},
     });
 
     for (const user of activeUsers) {
-      const { time, days, timezone } = user.schedule;
+      const { time, days, timezone, active } = user.schedule;
       const userTime = now.clone().tz(timezone).format('HH:mm');
       const userDay = now.clone().tz(timezone).format('dddd');
 
-      if (userTime === time && days.includes(userDay)) {
+      console.log(userTime, userDay, active);
+      console.log(time, days, timezone);
+
+      if (userTime === time && days.includes(userDay) && active) {
         try {
           await ScheduledMessageService.sendMessageReminder(user);
         } catch (error) {
@@ -44,22 +48,32 @@ export class ScheduledMessageService {
   }
 
   private static async sendMessageReminder(user: any) {
-    // Usuario en onboarding
-    // if (user.currentStage === 'onboarding') {
-    //   message += '¡Bienvenido! Para comenzar, necesitamos algunos datos básicos. ¿Podrías proporcionarlos?';
-    //   await sendWhatsAppMessage(user.whatsappNumber, message);
-    //   return;
-    // }
+    // Si el usuario está en onboarding, enviar mensaje de bienvenida
+    if (user.currentStage === 'onboarding' && !user.started) {
+      await sendWhatsAppMessage(user.whatsappNumber, `¡Hola ${user.fullName}! \n\n Bienvenido a Memori 🥸. Tenemos una sorpresa para ti... Mira este video 🎥`);
+      await sendWhatsAppVideo(user.whatsappNumber, 'https://drive.google.com/uc?id=1FQZJ8lgDF91d_pH4xKJ_gTf7I4GtzYyd');
+      await new Promise(resolve => setTimeout(resolve, 12000)); // Esperar 8 segundos
+      await sendWhatsAppMessage(user.whatsappNumber, 'Me puedes responder con texto ✍️ o enviar un audio 🎤. Lo que más te acomode. \n\n¿Comenzamos? 😊');
+      user.started = true;
+      await user.save();
+      return;
+    }
 
     // Obtener la pregunta actual
-    const currentQuestion = user.questions.find((q: any) => q.questionId === user.currentQuestionId);
+    const currentQuestion = user.questions.find((q: any) => q.questionId === (user.currentQuestionId + 1));
+    
+    // Verificar si se encontró la pregunta
+    if (!currentQuestion) {
+        console.error(`No se encontró el capítulo actual para el usuario ${user.whatsappNumber}`);
+        return;
+    }
 
     let message = '';
     
     if (currentQuestion.wordCount !== 0) {
-      message = await generateContinueMessage(currentQuestion.text);
+        message = await generateContinueMessage(currentQuestion.text);
     } else {
-      message = await generateNextQuestionMessage(currentQuestion.text);
+        message = await generateNextQuestionMessage(currentQuestion.text);
     }
 
     await sendWhatsAppMessage(user.whatsappNumber, message);

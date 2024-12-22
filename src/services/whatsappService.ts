@@ -27,7 +27,7 @@ export const sendWhatsAppMessage = async (to: string, message: string) => {
 export const sendTemplateMessage = async (to: string) => {
   try {
     const message = await client.messages.create({
-      contentSid: "HX6d1a1a351989d68147fdc94539cd7bb5",
+      contentSid: "HX83640330ea1364245ea951932f7210a1",
       from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
       to: `whatsapp:${to}`,
     });
@@ -37,3 +37,50 @@ export const sendTemplateMessage = async (to: string) => {
     throw error;
   }
 };
+
+export const sendWhatsAppImage = async (to: string, imageUrl: string, caption: string = '') => {
+  try {
+    const response = await client.messages.create({
+      from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+      mediaUrl: [imageUrl],
+      body: caption,
+      to: `whatsapp:${to}`
+    });
+    return response;
+  } catch (error) {
+    console.error('Error enviando imagen por WhatsApp:', error);
+    throw error;
+  }
+};
+
+export const sendWhatsAppVideo = async (to: string, videoUrl: string, caption: string = '') => {
+  try {
+    const response = await client.messages.create({
+      from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+      mediaUrl: [videoUrl],
+      body: caption,
+      to: `whatsapp:${to}`
+    });
+    return response;
+  } catch (error) {
+    console.error('Error enviando video por WhatsApp:', error);
+    throw error;
+  }
+};
+
+export const sendWhatsAppAudio = async (to: string, audioUrl: string, caption: string = '') => {
+  try {
+    const response = await client.messages.create({
+      from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+      mediaUrl: [audioUrl],
+      body: caption, 
+      to: `whatsapp:${to}`
+    });
+    return response;
+  } catch (error) {
+    console.error('Error enviando audio por WhatsApp:', error);
+    throw error;
+  }
+};
+
+

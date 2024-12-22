@@ -1,7 +1,7 @@
 import User from '../models/UserQuestion';
 import Question from '../models/Question';
-import { filterGenerateQuestionResponse, generateQuestionMessage, generateQuestionResponse, summarizeConversationHistory } from './openAIQuestionService';
-import { sendTemplateMessage, sendWhatsAppMessage } from './whatsappService';
+import { filterGenerateQuestionResponse, generateQuestionMessage, generateQuestionResponse, summarizeConversationHistory, filterOnboardingIntent, generateOnboardingResponse } from './openAIQuestionService';
+import { sendTemplateMessage, sendWhatsAppAudio, sendWhatsAppMessage, sendWhatsAppVideo } from './whatsappService';
 
 export class QuestionService {
   /**
@@ -39,6 +39,8 @@ export class QuestionService {
   static async handleStage(user: any, message: string): Promise<string> {
     console.log(message);
     switch (user.currentStage) {
+      case 'new':
+        return this.handleNew(user, message);
       case 'onboarding':
         return this.handleOnboarding(user, message);
       case 'questions':
@@ -48,10 +50,75 @@ export class QuestionService {
     }
   }
 
+  static async handleOnboarding(user: any, message: string): Promise<string> {
+    try {
+      // Analizar la intención del usuario
+      // obtener ultimos 3 mensajes del historial de onboarding
+
+      if (user.onboarding.history.length === 0) {
+        await sendWhatsAppAudio(user.whatsappNumber, 'https://drive.google.com/uc?id=1jFz2gB-mZqyg8po7nifXUdaFfKq6_oei');
+        await new Promise(resolve => setTimeout(resolve, 8000)); // Esperar 8 segundos
+        await sendWhatsAppMessage(user.whatsappNumber, 'Si tienes alguna pregunta, estoy aquí para ayudar. \n\n¿Vamos por el primer capítulo? 😊');
+        user.onboarding.history.push({
+          message,
+          type: 'incoming',
+          timestamp: new Date(),
+        });
+        user.onboarding.history.push({
+          message: '¡Bienvenido a Memori! Mira este video para aprender cómo usar la plataforma 🎥\n\nMe puedes responder con texto ✍️ o enviar un audio 🎤. Lo que más te acomode.',
+          type: 'outgoing',
+          timestamp: new Date(),
+        });
+        return '';
+      }
+      const lastThreeMessages = user.onboarding.history.slice(-3);
+      const intent = await filterOnboardingIntent(message, lastThreeMessages);
+      
+      // Generar una respuesta basada en la intención
+      
+      // Si el usuario está listo para comenzar
+      if (intent === 'ready') {
+        // Actualizar el estado del usuario
+        user.currentStage = 'questions';
+        user.currentQuestionId = 0;
+        await user.save();
+        
+        // Enviar mensaje de transición
+        const response = 'Genial, ahora vamos a empezar con el primer capítulo! \n\n🥁 *Redoble de tambores* 🥁 Prepárate para un viaje lleno de recuerdos especiales.\n\nMe puedes responder con texto ✍️ o enviar un audio 🎤. Lo que más te acomode.';
+        await sendWhatsAppMessage(user.whatsappNumber, response);
+        await this.handleQuestions(user, message);
+        return '';
+      }
+
+      const response = await generateOnboardingResponse(message, lastThreeMessages);
+
+
+      // Agregar el mensaje recibido al historial de onboarding
+      user.onboarding.history.push({
+        message,
+        type: 'incoming',
+        timestamp: new Date(),
+      });
+
+      user.onboarding.history.push({
+        message: response,
+        type: 'outgoing',
+        timestamp: new Date(),
+      });
+      
+      // Para cualquier otra intención, solo enviar la respuesta generada
+      await sendWhatsAppMessage(user.whatsappNumber, response);
+      return '';
+    } catch (error) {
+      console.error('Error en handleOnboarding:', error);
+      return 'Lo siento, ha ocurrido un error. Por favor, contacta con soporte.';
+    }
+  }
+
   /**
    * Maneja el flujo de Onboarding.
    */
-  static async handleOnboarding(user: any, message: string): Promise<string> {
+  static async handleNew(user: any, message: string): Promise<string> {
     const questions = [
       '¡Qué emoción conocerte! 💫 Para comenzar, ¿podrías contarme tu nombre completo?',
       '¡Gracias! Ahora me encantaría saber un poco más de ti. \n\n¿Dónde y cuándo naciste? 🌍✨',
@@ -79,8 +146,8 @@ export class QuestionService {
     user.currentQuestion = 0;
     await user.save();
     
-    await sendWhatsAppMessage(user.whatsappNumber, `Genial, ahora vamos a empezar con la primera pregunta! \n\n🥁 *Redoble de tambores* 🥁 Prepárate para un viaje lleno de recuerdos especiales.\n\nMe puedes responder con texto ✍️ o enviar un audio 🎤. Lo que más te acomode.`);
-    await sendWhatsAppMessage(user.whatsappNumber, `¿Estás listo/a para comenzar?💫✨`);
+    await sendWhatsAppMessage(user.whatsappNumber, `Genial, ahora vamos a empezar con el primer capítulo! \n\n🥁 *Redoble de tambores* 🥁 Prepárate para un viaje lleno de recuerdos especiales.\n\nMe puedes responder con texto ✍️ o enviar un audio 🎤. Lo que más te acomode.`);
+    await sendWhatsAppMessage(user.whatsappNumber, `¿Comencémos? 💫✨`);
     return '';
   }
 
@@ -90,7 +157,7 @@ export class QuestionService {
   
     // Si no hay pregunta actual, significa que no está inicializado correctamente
     if (!currentQuestion) {
-      await sendWhatsAppMessage(user.whatsappNumber, 'No hay una pregunta actual configurada. Por favor, contacta con soporte.');
+      await sendWhatsAppMessage(user.whatsappNumber, 'No hay capítulo actual configurado. Por favor, contacta con soporte.');
       return '';
     }
 
@@ -98,10 +165,13 @@ export class QuestionService {
       // Continuar con la misma pregunta y flujo de generación de respuesta
       await sendWhatsAppMessage(user.whatsappNumber, '¡Genial! Sigamos 💭✨');
       return '';
-    } else if (message === 'Siguiente pregunta') {
+    } else if (message === 'Siguiente capítulo') {
       user.currentQuestionId++;
       await user.save();
-      await sendWhatsAppMessage(user.whatsappNumber, '¡Excelente! Ahora vamos a la siguiente pregunta. \n\n¿Estás listo/a para continuar?💫✨');
+      const totalQuestions = user.questions.length;
+      const currentQuestionNumber = user.currentQuestionId + 1;
+      const text = `¡Excelente! Ahora vamos al siguiente capítulo. \n\nLlevas ${currentQuestionNumber} de ${totalQuestions} capítulos. 🙌\n\n¿Continuamos? 💫✨`;
+      await sendWhatsAppMessage(user.whatsappNumber, text);
       return '';
     } else if (message === 'Terminar por hoy') {
       // aca enviamos el template de agradecimiento y despedida. y que nos vemos en la siguiente sesión
@@ -169,13 +239,16 @@ export class QuestionService {
       message: message,
     });
     console.log(response);
-    const aiResponse = await filterGenerateQuestionResponse({
+    let aiResponse = await filterGenerateQuestionResponse({
       question: currentQuestion.text,
       summary: currentQuestion.summary || '',
       history: currentQuestion.conversationHistory.slice(-5),
       message: message,
       aiResponse: response,
     });
+    if (aiResponse.startsWith('"') && aiResponse.endsWith('"')) {
+      aiResponse = aiResponse.slice(1, -1);
+    }
     console.log(aiResponse);
   
     // Agregar respuesta del bot al historial
@@ -190,6 +263,8 @@ export class QuestionService {
 
     if (aiResponse) await sendWhatsAppMessage(user.whatsappNumber, aiResponse);
 
+    console.log(currentQuestion.isCompleted)
+    console.log(currentQuestion.completedCountMessages % 5 === 0)
 
     if (currentQuestion.isCompleted && currentQuestion.completedCountMessages % 5 === 0) {
       sendTemplate = true;

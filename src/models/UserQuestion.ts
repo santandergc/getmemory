@@ -21,15 +21,21 @@ interface IUser extends Document {
   whatsappNumber: string; // Número de WhatsApp del usuario
   fullName: string; // Nombre completo del usuario
   birthInfo: string; // Fecha de nacimiento (ej. '2000-05-23')
-  currentQuestion: number; // ID de la pregunta actual
+  currentQuestion: number; // step del usuario nuevo
   currentQuestionId: number; // ID de la pregunta actual
   currentStage: string; // Etapa actual del usuario
+  sex: string; // Sexo del usuario
+  onboarding: {
+    history: IConversationMessage[];
+  };
   schedule: {
     time: string; // Hora de envío (formato 'HH:mm', ej. '08:00')
     days: string[]; // Días de envío (ej. ['Monday', 'Friday'] para semanal, o ['Monday', 'Tuesday', 'Wednesday'] para diario)
     timezone: string; // Zona horaria en formato IANA (ej. 'America/Mexico_City')
+    active: boolean; // Si el usuario tiene activado el envío de mensajes
   };
   questions: IUserQuestion[]; // Lista de preguntas asociadas al usuario
+  started: boolean; // Si el usuario ha iniciado la aplicación
   createdAt: Date; // Fecha de creación del usuario
   updatedAt: Date; // Última actualización del usuario
 }
@@ -102,6 +108,11 @@ const userSchema = new Schema<IUser>(
       type: String,
       trim: true,
     },
+    sex: {
+      type: String,
+      enum: ['male', 'female', 'other'],
+      trim: true,
+    },
     currentQuestion: {
       type: Number,
       default: 0,
@@ -112,12 +123,19 @@ const userSchema = new Schema<IUser>(
     },
     currentStage: {
       type: String,
-      default: 'onboarding',
+      enum: ['new', 'onboarding', 'questions'],
+      default: 'new',
+    },
+    onboarding:{
+      history: {
+        type: [conversationMessageSchema],
+        default: [],
+      },
     },
     schedule: {
       time: { 
         type: String,
-        default: '',
+        default: '10:00',
       },
       days: {
         type: [String],
@@ -125,12 +143,20 @@ const userSchema = new Schema<IUser>(
       },
       timezone: {
         type: String,
-        default: '',
+        default: 'America/Mexico_City',
+      },
+      active: {
+        type: Boolean,
+        default: false,
       }
     },
     questions: {
       type: [userQuestionSchema],
       default: [],
+    },
+    started: {
+      type: Boolean,
+      default: false,
     },
   },
   {

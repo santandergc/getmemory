@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
-import UserOnboarding from '../models/UserOnboarding';
 import Question from '../models/Question';
+import { activateUser } from '../services/platformService';
+import UserOnboarding from '../models/UserOnboarding';
 
 interface OnboardingRequest extends Request {
   user?: any;
@@ -121,13 +122,30 @@ export const platformController = {
     try {
       const userId = req.user._id;
       const user = await UserOnboarding.findById(userId);
+      const { schedule, notificationPhones } = req.body;
+      console.log(req.body);
 
       if (!user) {
         return res.status(404).json({ error: 'Usuario no encontrado' });
       }
 
       user.currentPhase.configuration = true;
+      user.schedule = {
+        time: schedule.time,
+        days: schedule.days,
+        timezone: schedule.timezone,
+        active: true,
+      };
+      user.trackingPhones = notificationPhones.map((phone: any) => ({
+        phoneNumber: phone,
+        notificationType: 'weekly',
+      }));
+
+      // ACTIVAR EL USUARIO, ES DECIR, CREAR EL USUARIO EN LA BASE DE DATOS DE WHATSAPP
       await user.save();
+
+      // ACTIVAR EL USUARIO, ES DECIR, CREAR EL USUARIO EN LA BASE DE DATOS DE WHATSAPP
+      await activateUser(user);
 
       res.status(200).json({ message: 'Configuración completada exitosamente' });
     } catch (error) {

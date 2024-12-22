@@ -46,10 +46,10 @@ Eres una persona. La idea es que la conversación sea cálida y cercana. Como un
    - Alterna entre estilos de respuesta para evitar monotonía.
    - Usa un lenguaje cálido, cercano y adaptado a las emociones del usuario.
    - Divide respuestas largas en fragmentos breves (máximo 20 palabras por fragmento). Limita las respuestas a un rango de 30-90 palabras en total, priorizando la claridad y concisión.
-   - **Evita usar comillas en tus respuestas.**
+   - **NUNCA poner comillas al inicio y al final de la respuesta.**
 
 6. **Adherencia a la pregunta principal:**
-   - Si el usuario se desvía, valida sus palabras primero para no invalidar su experiencia. Redirige de forma empática y pasiva hacia el tema principal, asegurándote de que las referencias sean precisas y relacionadas con el historial o con un tema NUEVO (ejemplo: evita cambiar la ubicación o contexto si ya se mencionó anteriormente).
+   - Si el usuario se desvía, valida sus palabras primero para no invalidar su experiencia. Redirige de forma empática y pasiva hacia el tema principal, asegur��ndote de que las referencias sean precisas y relacionadas con el historial o con un tema NUEVO (ejemplo: evita cambiar la ubicación o contexto si ya se mencionó anteriormente).
    - No hables de épocas distintas o temas no relacionados con la pregunta.
 
 ### Opciones de Estilo de Respuesta
@@ -320,7 +320,7 @@ IMPORTANTE:
   const intro = completion.choices[0]?.message?.content || 'Sigamos conociendo tu historia ✨';
   
   // Construimos el mensaje completo con el formato deseado y la pregunta en mayúsculas
-  return `${intro}\n\n*Pregunta ${questionId}:*\n\n*${question.toUpperCase()}*`;
+  return `${intro}\n\n*Capítulo ${questionId}:*\n\n*${question.toUpperCase()}*`;
 };
 
 
@@ -441,6 +441,107 @@ export const generateNextQuestionMessage = async (question: string): Promise<str
   } catch (error) {
     console.error('Error al generar mensaje de nueva pregunta:', error);
     return '¡Hola! ¿Listo para explorar una nueva pregunta juntos? 💫';
+  }
+};
+
+export const filterOnboardingIntent = async (message: string, history: string[]): Promise<string> => {
+  const systemPrompt = `
+  Eres un analizador de intención para el proceso de onboarding de GetMemori.
+  Tu tarea es determinar la intención del usuario en base a su ultimo mensaje durante el onboarding.
+  Debes considerar el historial completo para determinar la intención. 
+
+  Las posibles intenciones son:
+  - "ready": El usuario indica que está listo para comenzar con las preguntas (intención principal)
+  - "question": El usuario tiene una pregunta o duda sobre el proceso
+  - "other": El usuario no indica que está listo para comenzar, ni tiene una pregunta o duda sobre el proceso
+  Debes responder ÚNICAMENTE con una de estas palabras clave.
+  `;
+
+  const userPrompt = `
+  Últimos mensajes del historial de onboarding:
+  ${history.join('\n')}
+
+  Mensaje del usuario:
+  "${message}"
+  `;
+
+  try {
+    const completion = await openai.chat.completions.create({
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      model: "gpt-4o-mini",
+      temperature: 0.3,
+      max_tokens: 50
+    });
+
+    return completion.choices[0]?.message?.content?.toLowerCase() || 'other';
+  } catch (error) {
+    console.error('Error al analizar la intención del onboarding:', error);
+    return 'other';
+  }
+};
+
+export const generateOnboardingResponse = async (message: string, history: string[]): Promise<string> => {
+  const systemPrompt = `
+Eres Memori, un asistente empático y cálido que guía a los usuarios durante el proceso de onboarding en GetMemori.
+
+Tu objetivo es resolver cualquier duda del usuario de manera clara, amigable y motivadora, asegurándote de que entiendan el proceso descrito a continuación:
+
+Contexto del proceso:
+1. Los usuarios serán guiados a través de diversas preguntas diseñadas para ayudarlos a recordar y compartir momentos importantes de su vida. Ejemplo: "¿Cómo fue tu niñez?"
+2. Cada respuesta debe tener al menos 400 palabras para capturar todos los detalles importantes. Si una respuesta es más corta, el agente hará preguntas adicionales para profundizar.
+3. El ritmo es flexible: los usuarios recibirán recordatorios diarios a una hora específica para continuar. También pueden cambiar los días y horarios de los recordatorios según su conveniencia.
+4. Si el usuario necesita pausar, puede hacerlo en cualquier momento y retomar cuando lo desee.
+5. Al finalizar, se creará un libro único con su biografía, reflejando su vida, recuerdos y legado, listo para guardar, compartir o regalar.
+6. El proceso es sencillo y está diseñado para ser cómodo y emocionante para el usuario.
+7. El usuario puede responder con texto o audio. Recomienda que elija audio si es posible.
+
+Reglas:
+1. Usa un lenguaje cálido, claro y empático. 😊
+2. Sé breve y directo, pero responde todas las dudas del usuario con precisión y detalle si lo requiere.
+3. Refuerza con emojis y palabras alentadoras, asegurando que el usuario se sienta acompañado y seguro.
+4. Si el usuario muestra inseguridad, anímalo y recuérdale que puede ajustar el ritmo del proceso, incluyendo cambiar sus recordatorios.
+5. Siempre transmite entusiasmo sobre el proceso y lo especial que es crear su biografía.
+6. Si el usuario está listo para comenzar, confirma el inicio con entusiasmo.
+
+Tu tono debe ser amigable y alentador, siempre mostrando paciencia y disposición para resolver cualquier duda.
+
+Termina siempre con una pregunta para continuar el proceso. EJEMPLO: Te parece si avanzamos a la primera pregunta?
+
+  `;
+
+  const userPrompt = `
+Últimos mensajes del historial de onboarding:
+${history.join('\n')}
+
+Mensaje del usuario: "${message}"
+
+Responde a este mensaje teniendo en cuenta el contexto del proceso, en especial las funciones de recordatorios personalizables, y las reglas establecidas en el system prompt. Asegúrate de resolver cualquier duda del usuario de manera empática y cálida, y motívalo a continuar con entusiasmo.
+
+No excedas las 100 palabras. Ni los dos parrafos. Recuerda que es una conversación, debes crear una respuesta que sea coherente con el historial y el contexto.
+
+RESPONDE AL ÚLTIMO MENSAJE DEL USUARIO, SE CONCRETO Y AMABLE.
+
+  `;
+
+  try {
+    const completion = await openai.chat.completions.create({
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      model: "gpt-4o-mini",
+      temperature: 0.7,
+      max_tokens: 200
+    });
+
+    return completion.choices[0]?.message?.content || 
+      '¡Genial! Estoy aquí para ayudarte en este proceso. ¿Tienes alguna pregunta antes de comenzar? 😊';
+  } catch (error) {
+    console.error('Error al generar respuesta de onboarding:', error);
+    return '¡Gracias por tu mensaje! ¿Tienes alguna pregunta antes de comenzar? 😊';
   }
 };
 

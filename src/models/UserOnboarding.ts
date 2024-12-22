@@ -16,17 +16,16 @@ interface IUserOnboarding extends Document {
   selectedQuestions: [{
     questionId: number;
     text: string;
-    isActive: boolean;
   }];
   schedule: {
-    days: string[];                // ['Monday', 'Wednesday', 'Friday']
-    time: string;                  // 'HH:mm' format
-    timezone: string;              // IANA timezone format
+    days: string[];
+    time: string;
+    timezone: string;
+    active: boolean;
   };
   trackingPhones: [{
     phoneNumber: string;
-    name: string;
-    notificationType: 'daily' | 'weekly' | 'monthly';
+    notificationType: 'weekly';
   }];
   status: 'pending' | 'active' | 'paused' | 'completed';
   currentPhase: {
@@ -100,35 +99,25 @@ const userOnboardingSchema = new Schema<IUserOnboarding>({
     text: {
       type: String,
       required: true,
-    },
-    isActive: {
-      type: Boolean,
-      default: true,
-    },
+    }
   }],
   schedule: {
     days: {
       type: [String],
-      validate: {
-        validator: function(days: string[]) {
-          const validDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-          return days.every(day => validDays.includes(day));
-        },
-        message: 'Invalid day format'
-      }
+      required: true,
     },
-    time: {
+    time: { 
       type: String,
-      validate: {
-        validator: function(time: string) {
-          return /^([0-1][0-9]|2[0-3]):[0-5][0-9]$/.test(time);
-        },
-        message: 'Invalid time format. Use HH:mm'
-      }
+      required: true,
     },
     timezone: {
       type: String,
-    }
+      required: true,
+    },
+    active: {
+      type: Boolean,
+      default: true,
+    },
   },
   trackingPhones: [{
     phoneNumber: {
@@ -136,14 +125,9 @@ const userOnboardingSchema = new Schema<IUserOnboarding>({
       required: true,
       trim: true,
     },
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-    },
     notificationType: {
       type: String,
-      enum: ['daily', 'weekly', 'monthly'],
+      enum: ['weekly'],
       default: 'weekly',
     }
   }],
