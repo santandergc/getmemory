@@ -2,20 +2,24 @@ import { Request, Response } from 'express';
 import Question from '../models/Question';
 import { activateUser } from '../services/platformService';
 import UserOnboarding from '../models/UserOnboarding';
+import UserQuestion from '../models/UserQuestion';
+import { ObjectId } from 'mongoose';
 
 interface OnboardingRequest extends Request {
   user?: any;
 }
 
 export const platformController = {
-  async handleOnboarding(req: OnboardingRequest, res: Response) {
+  async handleInfo(req: OnboardingRequest, res: Response) {
     try {
       const { 
-        name,
-        sex,
+        id,
+        fullName,
+        gender,
         birthDate,
         phone,
         country,
+        timeZone,
       } = req.body;
       console.log(req.body);
 
@@ -28,19 +32,44 @@ export const platformController = {
         return res.status(404).json({ error: 'Usuario no encontrado' });
       }
 
-      // Actualizar los campos del onboarding
-      if (name) user.userInfo.fullName = name;
-      if (sex) user.userInfo.sex = sex;
-      if (birthDate) user.userInfo.birthDate = birthDate;
-      if (phone) user.userInfo.phone = phone;
-      if (country) user.userInfo.country = country;
+      // Asegurarse de que el array users tenga el índice necesario
+      while (user.users.length <= id) {
+        user.users.push({
+          completed: false,
+          state: {
+            info: false,
+            questions: false,
+            reminder: false
+          },
+          info: {
+            fullName: '',
+            birthDate: '',
+            gender: 'male',
+            phone: '',
+            country: '',
+            timeZone: ''
+          },
+          questions: [],
+          reminder: {
+            recurrency: '',
+            time: '',
+            timeZone: '',
+            active: true,
+            mails: []
+          }
+        });
+      }
+      await user.save();
+      console.log(user.users[id]);
 
-      // Actualizar estado y fase
-      user.status = 'active';
-      user.currentPhase = {
-        ...user.currentPhase,
-        onboarding: true,
-      };
+      // Actualizar la información del usuario en el índice específico
+      user.users[id].state.info = true;
+      user.users[id].info.fullName = fullName;
+      user.users[id].info.gender = gender;
+      user.users[id].info.birthDate = birthDate; 
+      user.users[id].info.phone = phone;
+      user.users[id].info.country = country;
+      user.users[id].info.timeZone = timeZone;
 
       await user.save();
 
@@ -49,7 +78,6 @@ export const platformController = {
         user: {
           id: user._id,
           email: user.email,
-          currentPhase: user.currentPhase,
           status: user.status
         }
       });
@@ -57,6 +85,39 @@ export const platformController = {
     } catch (error) {
       console.error('Error en onboarding:', error);
       res.status(500).json({ error: 'Error al procesar el onboarding' });
+    }
+  },
+
+  async handleInfoById(req: OnboardingRequest, res: Response) {
+    try {
+      const userId = req.params.userId;
+      const user = await UserQuestion.findById(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'Usuario no encontrado' });
+      }
+      res.status(200).json(user);
+    } catch (error) {
+      console.error('Error getting info:', error);
+      res.status(500).json({ error: 'Error al obtener la información' });
+    }
+  },
+
+  async handleInfoOnboarding(req: OnboardingRequest, res: Response) {
+    try {
+      const userId = req.user._id;
+      const id = Number(req.params.id);
+      const user = await UserOnboarding.findById(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'Usuario no encontrado' });
+      }
+      const userInfo = user.users[id].info;
+      if (!userInfo) {
+        return res.status(404).json({ error: 'Usuario no encontrado' });
+      }
+      res.status(200).json(userInfo);
+    } catch (error) {
+      console.error('Error getting info:', error);
+      res.status(500).json({ error: 'Error al obtener la información' });
     }
   },
 
@@ -71,15 +132,35 @@ export const platformController = {
         return res.status(404).json({ error: 'Usuario no encontrado' });
       }
 
-      // Prepare response with user information
-      const dashboardInfo = {
-        onboarding: user.currentPhase.onboarding,
-        questions: user.currentPhase.question,
-        configuration: user.currentPhase.configuration,
-        edition: user.currentPhase.edition
-      };
+      let nextUserIndex = 0;
 
-      res.status(200).json(dashboardInfo);
+      if (user.users.length === 0) {
+        nextUserIndex = 0;
+      } else {
+        // Buscar el primer usuario no completado
+        const incompleteUserIndex = user.users.findIndex(user => !user.completed);
+        
+        if (incompleteUserIndex >= 0) {
+          // Si hay un usuario incompleto, usar su índice
+          nextUserIndex = incompleteUserIndex;
+        } else if (user.availableUsers > 0) {
+          // Si todos están completos y hay usuarios disponibles, usar el siguiente índice
+          nextUserIndex = user.users.length;
+        } else {
+          // Si no hay usuarios disponibles y todos están completos, mantener 0
+          nextUserIndex = 0;
+        }
+      }
+
+      // Encuentra el primer usuario no completado
+      const firstUserNotCompleted = user.users.find(user => !user.completed);
+
+      res.status(200).json({
+        usersAvailable: user.availableUsers > 0,
+        nextUserIndex: nextUserIndex,
+        firstUserNotCompleted: firstUserNotCompleted || null,
+        users: user.users,
+      });
       
     } catch (error) {
       console.error('Error getting dashboard information:', error);
@@ -87,18 +168,177 @@ export const platformController = {
     }
   },
 
+  async handleBiographies(req: OnboardingRequest, res: Response) {
+    try {
+      const userId = req.user._id;
+      const user = await UserOnboarding.findById(userId);
+      
+      if (!user) {
+        return res.status(404).json({ error: 'Usuario no encontrado' });
+      }
+
+      console.log(user.usersIds);
+
+      // Obtener los usuarios relacionados con sus preguntas
+      const userBiographies = await Promise.all(
+        user.usersIds.map(async (id) => {
+          const userQuestion = await UserQuestion.findOne({ _id: id });
+          if (!userQuestion) return null;
+
+          return {
+            id: userQuestion._id,
+            fullName: userQuestion.fullName,
+            totalChapters: userQuestion.questions.length,
+            completedChapters: userQuestion.questions.filter(q => q.isCompleted).length,
+            idFirstQuestion: userQuestion.questions[0]._id
+          };
+        })
+      );
+      console.log(userBiographies);
+
+      // Filtrar los nulls y enviar solo las biografías válidas
+      const validBiographies = userBiographies.filter(bio => bio !== null);
+
+      res.status(200).json(validBiographies);
+
+    } catch (error) {
+      console.error('Error getting biographies:', error);
+      res.status(500).json({ error: 'Error al obtener las biografías' });
+    }
+  },
+
   async handleQuestions(req: OnboardingRequest, res: Response) {
     try {
-      const questions = await Question.find();
+      const userId = Number(req.params.userId);
+      const user = await UserOnboarding.findById(req.user._id);
+      let questions = user?.users[userId].questions || [];
+      if (questions.length === 0) {
+        questions = await Question.find();
+      }
+      console.log(questions);
       res.status(200).json(questions);
     } catch (error) {
       console.error('Error getting questions:', error);
       res.status(500).json({ error: 'Error al obtener las preguntas' });
     }
   },
-  async handleCreateQuestions(req: OnboardingRequest, res: Response) {
+
+  async handleQuestionsById(req: OnboardingRequest, res: Response) {
+    try {
+      const userId = req.params.userId;
+      console.log(userId);
+      const user = await UserOnboarding.findById(req.user._id);
+      if (user && user.usersIds.map(id => id.toString()).includes(userId)) {
+        const userQuestion = await UserQuestion.findOne({ _id: userId });
+        if (!userQuestion) {
+          return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+        res.status(200).json(userQuestion.questions);
+      } else {
+        return res.status(404).json({ error: 'Usuario no encontrado' });
+      }
+    } catch (error) {
+      console.error('Error getting questions:', error);
+      res.status(500).json({ error: 'Error al obtener las preguntas' });
+    }
+  },
+
+  async handleUpdateQuestions(req: OnboardingRequest, res: Response) {
     try {
       const userId = req.user._id;
+      const id = req.params.userId;
+      const { questions: newQuestions } = req.body;
+      
+      const user = await UserOnboarding.findById(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'Usuario no encontrado' });
+      }
+      
+      const userQuestion = await UserQuestion.findOne({ _id: id });
+      if (!userQuestion) {
+        return res.status(404).json({ error: 'Usuario no encontrado' });
+      }
+
+      console.log(newQuestions);
+
+      // Primero identificamos los IDs de preguntas intocables
+      const untouchableQuestionIds = new Set(
+        userQuestion.questions
+          .filter(q => q.isCompleted || q.wordCount > 0)
+          .map(q => q.questionId)
+      );
+
+      // Filtramos las nuevas preguntas para excluir las que tienen IDs intocables
+      const filteredNewQuestions = newQuestions.filter(
+        (q: { questionId: number }) => !untouchableQuestionIds.has(q.questionId)
+      );
+
+      const updatedQuestions = [];
+
+      // Primero agregamos todas las preguntas intocables
+      for (const question of userQuestion.questions) {
+        if (question.isCompleted || question.wordCount > 0) {
+          updatedQuestions.push(question);
+        }
+      }   
+
+      // Luego agregamos las nuevas preguntas filtradas
+      for (const newQuestion of filteredNewQuestions) {
+        updatedQuestions.push({
+          questionId: newQuestion.questionId,
+          text: newQuestion.text,
+          summary: '',
+          conversationHistory: [],
+          wordCount: 0,
+          minWords: newQuestion.minWords,
+          isCompleted: false,
+          completedCountMessages: 0,
+          messageCounter: 0,
+          textResult: ''
+        });
+      }
+
+      userQuestion.questions = updatedQuestions;
+      await userQuestion.save();
+      
+      res.status(200).json({ message: 'Preguntas actualizadas exitosamente' });
+    } catch (error) {
+      console.error('Error updating questions:', error);
+      res.status(500).json({ error: 'Error al actualizar las preguntas' });
+    }
+  },
+
+  async handleUpdateQuestion(req: OnboardingRequest, res: Response) {
+    try {
+      const userId = req.params.userId;
+      const questionId = req.params.questionId;
+      const { textResult, images } = req.body;
+
+      const user = await UserQuestion.findById(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'Usuario no encontrado' });
+      }
+
+      const question = user.questions.find(q => q._id?.toString() === questionId);
+      if (!question) {
+        return res.status(404).json({ error: 'Pregunta no encontrada' });
+      }
+
+      question.textResult = textResult;
+      question.images = images;
+      await user.save();
+
+      res.status(200).json({ message: 'Pregunta actualizada exitosamente' });
+    } catch (error) {
+      console.error('Error updating question:', error);
+      res.status(500).json({ error: 'Error al actualizar la pregunta' });
+    }
+  },
+
+  async handleCreateQuestionsOnboarding(req: OnboardingRequest, res: Response) {
+    try {
+      const userId = req.user._id;
+      const id = Number(req.params.id);
       const user = await UserOnboarding.findById(userId);
 
       if (!user) {
@@ -107,8 +347,8 @@ export const platformController = {
       
       // Guardar las preguntas seleccionadas en el usuario
       console.log(req.body);
-      user.selectedQuestions = req.body.questions;
-      user.currentPhase.question = true;
+      user.users[id].state.questions = true;
+      user.users[id].questions = req.body.questions;
       await user.save();
 
       res.status(200).json({ message: 'Preguntas creadas exitosamente' });
@@ -118,39 +358,42 @@ export const platformController = {
     }
   },
 
-  async handleConfiguration(req: OnboardingRequest, res: Response) {
+  async handleReminderOnboarding(req: OnboardingRequest, res: Response) {
     try {
       const userId = req.user._id;
       const user = await UserOnboarding.findById(userId);
-      const { schedule, notificationPhones } = req.body;
+      const id = Number(req.params.id);
+      const { reminder } = req.body;
       console.log(req.body);
 
       if (!user) {
         return res.status(404).json({ error: 'Usuario no encontrado' });
       }
 
-      user.currentPhase.configuration = true;
-      user.schedule = {
-        time: schedule.time,
-        days: schedule.days,
-        timezone: schedule.timezone,
-        active: true,
+      const timeZone = user.users[id].info.timeZone;
+
+      user.users[id].state.reminder = true;
+      user.users[id].reminder = {
+        recurrency: reminder.recurrency,
+        time: reminder.time,
+        timeZone: timeZone,
+        active: reminder.active,
+        mails: reminder.mails,
       };
-      user.trackingPhones = notificationPhones.map((phone: any) => ({
-        phoneNumber: phone,
-        notificationType: 'weekly',
-      }));
+      user.users[id].completed = true;
 
       // ACTIVAR EL USUARIO, ES DECIR, CREAR EL USUARIO EN LA BASE DE DATOS DE WHATSAPP
+      
+      const newUser = await activateUser(user.users[id], user._id as ObjectId);
+
+      user.availableUsers -= 1;
+      user.usersIds.push(newUser._id as ObjectId); 
       await user.save();
-
-      // ACTIVAR EL USUARIO, ES DECIR, CREAR EL USUARIO EN LA BASE DE DATOS DE WHATSAPP
-      await activateUser(user);
 
       res.status(200).json({ message: 'Configuración completada exitosamente' });
     } catch (error) {
       console.error('Error creating configuration:', error);
       res.status(500).json({ error: 'Error al crear la configuración' });
     }
-  }
+  },
 };

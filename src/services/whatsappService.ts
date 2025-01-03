@@ -9,10 +9,10 @@ if (!accountSid || !authToken) {
 
 const client = twilio(accountSid, authToken);
 
-export const sendWhatsAppMessage = async (to: string, message: string) => {
+export const sendWhatsAppMessage = async (to: string, message: string, from?: string) => {
   try {
     const response = await client.messages.create({
-      from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+      from: `whatsapp:${from || process.env.TWILIO_WHATSAPP_NUMBER}`,
       body: message,
       to: `whatsapp:${to}`
     });
@@ -24,11 +24,11 @@ export const sendWhatsAppMessage = async (to: string, message: string) => {
   }
 }; 
 
-export const sendTemplateMessage = async (to: string) => {
+export const sendTemplateMessage = async (to: string, from?: string) => {
   try {
     const message = await client.messages.create({
       contentSid: "HX83640330ea1364245ea951932f7210a1",
-      from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+      from: `whatsapp:${from || process.env.TWILIO_WHATSAPP_NUMBER}`,
       to: `whatsapp:${to}`,
     });
     return message;
@@ -38,10 +38,10 @@ export const sendTemplateMessage = async (to: string) => {
   }
 };
 
-export const sendWhatsAppImage = async (to: string, imageUrl: string, caption: string = '') => {
+export const sendWhatsAppImage = async (to: string, imageUrl: string, caption: string = '', from?: string) => {
   try {
     const response = await client.messages.create({
-      from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+      from: `whatsapp:${from || process.env.TWILIO_WHATSAPP_NUMBER}`,
       mediaUrl: [imageUrl],
       body: caption,
       to: `whatsapp:${to}`
@@ -53,12 +53,11 @@ export const sendWhatsAppImage = async (to: string, imageUrl: string, caption: s
   }
 };
 
-export const sendWhatsAppVideo = async (to: string, videoUrl: string, caption: string = '') => {
+export const sendWhatsAppVideo = async (to: string, videoUrl: string, from?: string) => {
   try {
     const response = await client.messages.create({
-      from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+      from: `whatsapp:${from || process.env.TWILIO_WHATSAPP_NUMBER}`,
       mediaUrl: [videoUrl],
-      body: caption,
       to: `whatsapp:${to}`
     });
     return response;
@@ -68,12 +67,11 @@ export const sendWhatsAppVideo = async (to: string, videoUrl: string, caption: s
   }
 };
 
-export const sendWhatsAppAudio = async (to: string, audioUrl: string, caption: string = '') => {
+export const sendWhatsAppAudio = async (to: string, audioUrl: string, from?: string) => {
   try {
     const response = await client.messages.create({
-      from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+      from: `whatsapp:${from || process.env.TWILIO_WHATSAPP_NUMBER}`,
       mediaUrl: [audioUrl],
-      body: caption, 
       to: `whatsapp:${to}`
     });
     return response;
@@ -82,5 +80,3 @@ export const sendWhatsAppAudio = async (to: string, audioUrl: string, caption: s
     throw error;
   }
 };
-
-

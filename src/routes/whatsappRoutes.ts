@@ -1,14 +1,22 @@
 import express from 'express';
 import { handleIncomingMessage as handleQuestionMessage } from '../controllers/whatsappQuestionController';
+import { handleIncomingMessageFreeTrial } from '../controllers/whatsappFreetrialController';
 import { authController } from '../controllers/authController';
 import { authMiddleware } from '../middleware/auth';
 import { platformController } from '../controllers/platformController';
+import { stripeController } from '../controllers/stripeController';
+import { upload } from '../middleware/uploadMiddleware';
+import { uploadImageToFirebase } from '../services/firebaseStorageService';
 
 const router = express.Router();
 
 // Ruta pública para WhatsApp
 router.post('/whatsapp', async (req: express.Request, res: express.Response) => {
   await handleQuestionMessage(req, res);
+});
+
+router.post('/whatsapp/free-trial', async (req: express.Request, res: express.Response) => {
+  await handleIncomingMessageFreeTrial(req, res);
 });
 
 // Rutas de autenticación
@@ -27,24 +35,70 @@ router.get('/auth/validate',
   }
 );
 
-router.post('/onboarding', authMiddleware.validateToken, async (req: express.Request, res: express.Response) => {
-  await platformController.handleOnboarding(req, res);
+router.post('/info', authMiddleware.validateToken, async (req: express.Request, res: express.Response) => {
+  await platformController.handleInfo(req, res);
+});
+
+router.get('/info/user/:userId', authMiddleware.validateToken, async (req: express.Request, res: express.Response) => {
+  await platformController.handleInfoById(req, res);
+});
+
+router.get('/info/onboarding/:id', authMiddleware.validateToken, async (req: express.Request, res: express.Response) => {
+  await platformController.handleInfoOnboarding(req, res);
 });
 
 router.get('/dashboard', authMiddleware.validateToken, async (req: express.Request, res: express.Response) => {
   await platformController.handleDashboard(req, res);
 });
+router.get('/biographies', authMiddleware.validateToken, async (req: express.Request, res: express.Response) => {
+  await platformController.handleBiographies(req, res);
+});
 
-router.get('/questions', authMiddleware.validateToken, async (req: express.Request, res: express.Response) => {
+// Ruta para obtener todas las preguntas disponibles
+router.get('/questions/default/:userId', authMiddleware.validateToken, async (req: express.Request, res: express.Response) => {
   await platformController.handleQuestions(req, res);
 });
 
-router.post('/questions', authMiddleware.validateToken, async (req: express.Request, res: express.Response) => {
-  await platformController.handleCreateQuestions(req, res);
+// Ruta para obtener preguntas de un usuario específico
+router.get('/questions/user/:userId', authMiddleware.validateToken, async (req: express.Request, res: express.Response) => {
+  await platformController.handleQuestionsById(req, res);
 });
 
-router.post('/configuration', authMiddleware.validateToken, async (req: express.Request, res: express.Response) => {
-  await platformController.handleConfiguration(req, res);
+router.post('/questions/user/:userId', authMiddleware.validateToken, async (req: express.Request, res: express.Response) => {
+  await platformController.handleUpdateQuestions(req, res);
 });
+
+// Ruta para actualizar una pregunta específica
+router.put('/questions/:userId/:questionId', authMiddleware.validateToken, async (req: express.Request, res: express.Response) => {
+  await platformController.handleUpdateQuestion(req, res);
+});
+
+router.post('/questions/onboarding/:id', authMiddleware.validateToken, async (req: express.Request, res: express.Response) => {
+  await platformController.handleCreateQuestionsOnboarding(req, res);
+});
+
+router.post('/reminder/onboarding/:id', authMiddleware.validateToken, async (req: express.Request, res: express.Response) => {
+  await platformController.handleReminderOnboarding(req, res);
+});
+
+// Ruta para subir imágenes
+router.post('/upload-image/:userId/:questionId', 
+  authMiddleware.validateToken, 
+  upload.single('image'), 
+  async (req: express.Request, res: express.Response): Promise<void> => {
+    try {
+      if (!req.file) {
+        res.status(400).json({ error: 'No se proporcionó ninguna imagen' });
+        return;
+      }
+
+      const imageUrl = await uploadImageToFirebase(req.file);
+      res.status(200).json({ imageUrl });
+    } catch (error) {
+      console.error('Error al subir la imagen:', error);
+      res.status(500).json({ error: 'Error al procesar la imagen' });
+    }
+  }
+);
 
 export default router;  

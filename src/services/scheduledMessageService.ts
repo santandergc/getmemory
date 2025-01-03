@@ -7,7 +7,7 @@ import { generateContinueMessage, generateNextQuestionMessage } from './openAIQu
 export class ScheduledMessageService {
   // Inicializa el scheduler para ejecutar cada minuto
   static initScheduler() {
-    cron.schedule('*/1 * * * *', async () => {
+    cron.schedule('0 * * * *', async () => {
       try {
         console.log('Ejecutando verificación de mensajes programados...');
         await ScheduledMessageService.checkScheduledMessages();
@@ -22,22 +22,22 @@ export class ScheduledMessageService {
     const now = moment();
 
     const activeUsers = await User.find({
-      'schedule.time': { $exists: true, $ne: '' },
-      'schedule.days': { $exists: true, $ne: '' },
-      'schedule.timezone': { $exists: true, $ne: '' },
-      'schedule.active': { $exists: true, $ne: false },
+      'reminder.time': { $exists: true, $ne: '' },
+      'reminder.recurrency': { $exists: true, $ne: '' },
+      'reminder.timeZone': { $exists: true, $ne: '' },
+      'reminder.active': { $exists: true, $ne: false },
       whatsappNumber: { $exists: true, $ne: null},
     });
 
     for (const user of activeUsers) {
-      const { time, days, timezone, active } = user.schedule;
-      const userTime = now.clone().tz(timezone).format('HH:mm');
-      const userDay = now.clone().tz(timezone).format('dddd');
+      const { time, recurrency, timeZone, active } = user.reminder;
+      const userTime = now.clone().tz(timeZone).format('HH:mm');
+      const userDay = now.clone().tz(timeZone).format('dddd');
 
       console.log(userTime, userDay, active);
-      console.log(time, days, timezone);
+      console.log(time, recurrency, timeZone);
 
-      if (userTime === time && days.includes(userDay) && active) {
+      if (userTime === time && recurrency.includes(userDay) && active) {
         try {
           await ScheduledMessageService.sendMessageReminder(user);
         } catch (error) {

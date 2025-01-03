@@ -7,15 +7,21 @@ import express from 'express';
 import { connectDB } from './config/db';
 import whatsappRoutes from './routes/whatsappRoutes';
 import './config/firebase'; // Importar al inicio para asegurar la inicialización
+import { stripeController } from './controllers/stripeController';
 
 // Inicializar Express
 const app = express();
 
 // Configurar CORS para permitir conexiones locales
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:5173'],
+  origin: ['http://localhost:3000', 'http://localhost:5173', 'https://memori-app.netlify.app'],
   credentials: true
 }));
+
+// Ruta específica para webhook de Stripe (debe ir antes de express.json)
+app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  await stripeController.handleWebhook(req, res);
+});
 
 // Middleware para parsear JSON
 app.use(express.json());

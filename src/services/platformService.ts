@@ -1,18 +1,35 @@
+import { ObjectId } from "mongoose";
 import UserQuestions from "../models/UserQuestion";
-import UserOnboarding from "../models/UserOnboarding";
 
-export const activateUser = async (user: any) => {
+export const activateUser = async (user: any, fatherId: ObjectId) => {
     // crear usuario en tabla UserQuestions
    const data = {
-    whatsappNumber: user.userInfo.phone,
-    fullName: user.userInfo.fullName,
-    birthInfo: user.userInfo.birthDate,
-    sex: user.userInfo.sex,
+    whatsappNumber: user.info.phone,
+    fullName: user.info.fullName,
+    birthInfo: user.info.birthDate,
+    sex: user.info.gender,
     currentQuestion: 0,
     currentQuestionId: 0,
     currentStage: "onboarding",
-    schedule: user.schedule,
-    questions: user.selectedQuestions,
+    fatherId: fatherId,
+    reminder: {
+      time: user.reminder.time,
+      recurrency: user.reminder.recurrency,
+      timeZone: user.reminder.timeZone,
+      active: user.reminder.active,
+      mails: user.reminder.mails
+    },
+    questions: user.questions.map((q: any) => ({
+      questionId: q.questionId,
+      text: q.text,
+      isCompleted: false,
+      summary: '',
+      conversationHistory: [],
+      wordCount: 0,
+      minWords: q.minWords,
+      completedCountMessages: 0,
+      messageCounter: 0
+    })),
     started: false,
    }
 

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import User from '../models/UserQuestion';
+import UserFreeTrial from '../models/UserFreeTrail';
 import { sendTemplateMessage, sendWhatsAppMessage } from '../services/whatsappService';
 import { QuestionService } from '../services/questionService';
 import { transcribeAudio } from '../services/whisperService';
@@ -63,4 +64,3 @@ export async function handleIncomingMessage(req: Request, res: Response) {
       });
   }
 }
-

@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 
 interface IConversationMessage {
   message: string;
@@ -7,32 +7,39 @@ interface IConversationMessage {
 }
 
 interface IUserQuestion {
+  _id?: Types.ObjectId;
   questionId: number; // ID único de la pregunta
   text: string; // Texto de la pregunta
   summary: string; // Resumen de la pregunta
   conversationHistory: IConversationMessage[]; // Historial de la conversación para esta pregunta
   wordCount: number; // Conteo acumulado de palabras de las respuestas del usuario
+  minWords: number; // Cantidad mínima de palabras para completar la pregunta
   isCompleted: boolean; // Si la pregunta fue completada
   completedCountMessages: number; // Cantidad de mensajes enviados para completar la pregunta
   messageCounter: number; // Contador de mensajes para resumen
+  textResult: string; // Texto de la respuesta del usuario
+  images?: string[]; // Lista de imágenes asociadas a la pregunta
 }
 
 interface IUser extends Document {
   whatsappNumber: string; // Número de WhatsApp del usuario
+  fatherId: mongoose.Types.ObjectId; // ID del padre/tutor
   fullName: string; // Nombre completo del usuario
   birthInfo: string; // Fecha de nacimiento (ej. '2000-05-23')
   currentQuestion: number; // step del usuario nuevo
   currentQuestionId: number; // ID de la pregunta actual
   currentStage: string; // Etapa actual del usuario
-  sex: string; // Sexo del usuario
+  gender: string; // Sexo del usuario
+  country: string; // País del usuario
   onboarding: {
     history: IConversationMessage[];
   };
-  schedule: {
+  reminder: {
     time: string; // Hora de envío (formato 'HH:mm', ej. '08:00')
-    days: string[]; // Días de envío (ej. ['Monday', 'Friday'] para semanal, o ['Monday', 'Tuesday', 'Wednesday'] para diario)
-    timezone: string; // Zona horaria en formato IANA (ej. 'America/Mexico_City')
+    recurrency: string; // Días de envío (ej. ['Monday', 'Friday'] para semanal, o ['Monday', 'Tuesday', 'Wednesday'] para diario)
+    timeZone: string; // Zona horaria en formato IANA (ej. 'America/Mexico_City')
     active: boolean; // Si el usuario tiene activado el envío de mensajes
+    mails: string[]; // Lista de correos electrónicos a los que se enviarán los mensajes
   };
   questions: IUserQuestion[]; // Lista de preguntas asociadas al usuario
   started: boolean; // Si el usuario ha iniciado la aplicación
@@ -78,6 +85,10 @@ const userQuestionSchema = new Schema<IUserQuestion>({
     type: Number,
     default: 0,
   },
+  minWords: {
+    type: Number,
+    default: 300,
+  },
   isCompleted: {
     type: Boolean,
     default: false,
@@ -90,7 +101,15 @@ const userQuestionSchema = new Schema<IUserQuestion>({
     type: Number,
     default: 0,
   },
-}, { _id: false })
+  textResult: {
+    type: String,
+    default: '',
+  },
+  images: {
+    type: [String],
+    default: [],
+  },
+})
 
 const userSchema = new Schema<IUser>(
   {
@@ -100,6 +119,11 @@ const userSchema = new Schema<IUser>(
       unique: true,
       trim: true,
     },
+    fatherId: {
+      type: Schema.Types.ObjectId, 
+      ref: 'UserOnboarding',
+      required: false,
+    },
     fullName: {
       type: String,
       trim: true,
@@ -108,9 +132,13 @@ const userSchema = new Schema<IUser>(
       type: String,
       trim: true,
     },
-    sex: {
+    gender: {
       type: String,
       enum: ['male', 'female', 'other'],
+      trim: true,
+    },
+    country: {
+      type: String,
       trim: true,
     },
     currentQuestion: {
@@ -119,7 +147,7 @@ const userSchema = new Schema<IUser>(
     },
     currentQuestionId: {
       type: Number,
-      default: 0, // Empieza en 0 antes de asignar la primera pregunta
+      default: 0, 
     },
     currentStage: {
       type: String,
@@ -132,23 +160,27 @@ const userSchema = new Schema<IUser>(
         default: [],
       },
     },
-    schedule: {
+    reminder: {
       time: { 
         type: String,
         default: '10:00',
       },
-      days: {
-        type: [String],
-        default: [],
+      recurrency: {
+        type: String,
+        default: '2',
       },
-      timezone: {
+      timeZone: {
         type: String,
         default: 'America/Mexico_City',
       },
       active: {
         type: Boolean,
         default: false,
-      }
+      },
+      mails: {
+        type: [String],
+        default: [],
+      },
     },
     questions: {
       type: [userQuestionSchema],

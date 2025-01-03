@@ -1,22 +1,23 @@
-import { initializeApp, cert } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
-import { ServiceAccount } from 'firebase-admin';
+import admin from 'firebase-admin';
 
-const firebaseConfig = {
-  type: "service_account",
-  project_id: process.env.FIREBASE_PROJECT_ID,
-  private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
-  private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-  client_email: process.env.FIREBASE_CLIENT_EMAIL,
-  client_id: process.env.FIREBASE_CLIENT_ID,
-  auth_uri: process.env.FIREBASE_AUTH_URI,
-  token_uri: process.env.FIREBASE_TOKEN_URI,
-  auth_provider_x509_cert_url: process.env.FIREBASE_AUTH_CERT_URL,
-  client_x509_cert_url: process.env.FIREBASE_CLIENT_CERT_URL
+interface ServiceAccountConfig {
+  projectId?: string;
+  privateKey?: string;
+  clientEmail?: string;
+}
+
+const serviceAccount: ServiceAccountConfig = {
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+  clientEmail: process.env.FIREBASE_CLIENT_EMAIL
 };
 
-const app = initializeApp({
-  credential: cert(firebaseConfig as ServiceAccount)
-});
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET
+  });
+}
 
-export const auth = getAuth(app);
+export const auth = admin.auth();
+export const storage = admin.storage();
