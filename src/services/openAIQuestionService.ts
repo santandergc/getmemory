@@ -546,5 +546,34 @@ RESPONDE AL ÚLTIMO MENSAJE DEL USUARIO, SE CONCRETO Y AMABLE.
 };
 
 
+export const generateNameMessage = async (name: string): Promise<string> => {
+  const userPrompt = `
+  Nombre a procesar: "${name}"
+`;
+
+const systemPrompt = `
+ Vas a recibir un nombre, que puede ser un nombre completo o un nombre con un apellido, un nombre con un segundo apellido, o un nombre con un segundo nombre, etc.
+La idea es que tu entregues el primer nombre del usuario, en minúsculas, y con el primer caracter en mayúscula. 
+por ejemplo:
+- "Juan"
+- "Juan Perez"
+- "Juan Perez Garcia"
+- "Juan Perez Garcia Lopez"
+- "Juan Perez Garcia Lopez Lopez"
+
+Entregues: "Juan".
+`;
+
+  const completion = await openai.chat.completions.create({
+    messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
+    model: "gpt-4o-mini",
+    temperature: 0.3,
+    max_tokens: 100,
+  });
+
+  return completion.choices[0]?.message?.content || 'Sigamos conociendo tu historia ✨';
+};
+
+
 
 

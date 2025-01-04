@@ -4,6 +4,7 @@ import { activateUser } from '../services/platformService';
 import UserOnboarding from '../models/UserOnboarding';
 import UserQuestion from '../models/UserQuestion';
 import { ObjectId } from 'mongoose';
+import TemplateQuestion from '../models/TemplateQuestion';
 
 interface OnboardingRequest extends Request {
   user?: any;
@@ -20,8 +21,8 @@ export const platformController = {
         phone,
         country,
         timeZone,
+        isGift
       } = req.body;
-      console.log(req.body);
 
       const userId = req.user._id;
 
@@ -56,11 +57,11 @@ export const platformController = {
             timeZone: '',
             active: true,
             mails: []
-          }
+          },
+          isGift: true
         });
       }
       await user.save();
-      console.log(user.users[id]);
 
       // Actualizar la información del usuario en el índice específico
       user.users[id].state.info = true;
@@ -70,6 +71,7 @@ export const platformController = {
       user.users[id].info.phone = phone;
       user.users[id].info.country = country;
       user.users[id].info.timeZone = timeZone;
+      user.users[id].isGift = isGift;
 
       await user.save();
 
@@ -177,8 +179,6 @@ export const platformController = {
         return res.status(404).json({ error: 'Usuario no encontrado' });
       }
 
-      console.log(user.usersIds);
-
       // Obtener los usuarios relacionados con sus preguntas
       const userBiographies = await Promise.all(
         user.usersIds.map(async (id) => {
@@ -190,11 +190,11 @@ export const platformController = {
             fullName: userQuestion.fullName,
             totalChapters: userQuestion.questions.length,
             completedChapters: userQuestion.questions.filter(q => q.isCompleted).length,
-            idFirstQuestion: userQuestion.questions[0]._id
+            idFirstQuestion: userQuestion.questions[0]._id,
+            started: userQuestion.started
           };
         })
       );
-      console.log(userBiographies);
 
       // Filtrar los nulls y enviar solo las biografías válidas
       const validBiographies = userBiographies.filter(bio => bio !== null);
@@ -207,15 +207,41 @@ export const platformController = {
     }
   },
 
+  async handleStartBiography(req: OnboardingRequest, res: Response) {
+    try {
+      const id = req.params.id;
+      const user = await UserQuestion.findById(id);
+      if (!user) {
+        return res.status(404).json({ error: 'Usuario no encontrado' });
+      }
+      user.started = true;
+      console.log(user.isGift);
+      // ACTIVAR EL USUARIO, ES DECIR, ENVIAR TEMPLATE DE WHATSAPP DE BIENVENIDA
+      // ENVIAR MENSAJE DE BIENVENIDA
+      // si isGift es true, se le envia como regalo. Si es que no, se le envia como usuario normal
+      // crear template de regalo en twilio
+      // Hola (nombre cliente) mucho gusto! Soy Sofía de memori, te escribo por que (nombre comprador) te ha enviado un regalo. Empezamos?
+      // Hola (nombre comprador)! Que bueno verte por aquí. Estas listo para empezar?
+      // Buenísimo! Te invito a que veas este video para conocernos:
+      // Te invito a que veas este video para explicarte como funciona Memori a través de whatsapp:
+
+      await user.save();
+      res.status(200).json({ message: 'Biografía iniciada exitosamente' });
+    } catch (error) {
+      console.error('Error starting biography:', error);
+      res.status(500).json({ error: 'Error al iniciar la biografía' });
+    }
+  },
+
   async handleQuestions(req: OnboardingRequest, res: Response) {
     try {
       const userId = Number(req.params.userId);
       const user = await UserOnboarding.findById(req.user._id);
       let questions = user?.users[userId].questions || [];
       if (questions.length === 0) {
-        questions = await Question.find();
+        const templateQuestions = await TemplateQuestion.findOne({ name: 'Life Questions Template' });
+        questions = templateQuestions?.questions || [];
       }
-      console.log(questions);
       res.status(200).json(questions);
     } catch (error) {
       console.error('Error getting questions:', error);
@@ -226,7 +252,6 @@ export const platformController = {
   async handleQuestionsById(req: OnboardingRequest, res: Response) {
     try {
       const userId = req.params.userId;
-      console.log(userId);
       const user = await UserOnboarding.findById(req.user._id);
       if (user && user.usersIds.map(id => id.toString()).includes(userId)) {
         const userQuestion = await UserQuestion.findOne({ _id: userId });
@@ -258,9 +283,6 @@ export const platformController = {
       if (!userQuestion) {
         return res.status(404).json({ error: 'Usuario no encontrado' });
       }
-
-      console.log(newQuestions);
-
       // Primero identificamos los IDs de preguntas intocables
       const untouchableQuestionIds = new Set(
         userQuestion.questions
@@ -294,7 +316,8 @@ export const platformController = {
           isCompleted: false,
           completedCountMessages: 0,
           messageCounter: 0,
-          textResult: ''
+          textResult: '',
+          chapter: newQuestion.chapter
         });
       }
 
@@ -346,7 +369,6 @@ export const platformController = {
       }
       
       // Guardar las preguntas seleccionadas en el usuario
-      console.log(req.body);
       user.users[id].state.questions = true;
       user.users[id].questions = req.body.questions;
       await user.save();
@@ -364,7 +386,6 @@ export const platformController = {
       const user = await UserOnboarding.findById(userId);
       const id = Number(req.params.id);
       const { reminder } = req.body;
-      console.log(req.body);
 
       if (!user) {
         return res.status(404).json({ error: 'Usuario no encontrado' });

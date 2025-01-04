@@ -12,6 +12,7 @@ interface IUserQuestion {
   text: string; // Texto de la pregunta
   summary: string; // Resumen de la pregunta
   conversationHistory: IConversationMessage[]; // Historial de la conversación para esta pregunta
+  chapter: string; // Capítulo de la pregunta
   wordCount: number; // Conteo acumulado de palabras de las respuestas del usuario
   minWords: number; // Cantidad mínima de palabras para completar la pregunta
   isCompleted: boolean; // Si la pregunta fue completada
@@ -43,6 +44,7 @@ interface IUser extends Document {
   };
   questions: IUserQuestion[]; // Lista de preguntas asociadas al usuario
   started: boolean; // Si el usuario ha iniciado la aplicación
+  isGift: boolean; // Si el usuario es un regalo
   createdAt: Date; // Fecha de creación del usuario
   updatedAt: Date; // Última actualización del usuario
 }
@@ -80,6 +82,10 @@ const userQuestionSchema = new Schema<IUserQuestion>({
   conversationHistory: {
     type: [conversationMessageSchema],
     default: [],
+  },
+  chapter: {
+    type: String,
+    default: '',
   },
   wordCount: {
     type: Number,
@@ -189,6 +195,10 @@ const userSchema = new Schema<IUser>(
     started: {
       type: Boolean,
       default: false,
+    },
+    isGift: {
+      type: Boolean,
+      default: true,
     },
   },
   {

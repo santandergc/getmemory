@@ -15,7 +15,7 @@ router.post('/whatsapp', async (req: express.Request, res: express.Response) => 
   await handleQuestionMessage(req, res);
 });
 
-router.post('/whatsapp/free-trial', async (req: express.Request, res: express.Response) => {
+router.post('/free-trial', async (req: express.Request, res: express.Response) => {
   await handleIncomingMessageFreeTrial(req, res);
 });
 
@@ -52,6 +52,10 @@ router.get('/dashboard', authMiddleware.validateToken, async (req: express.Reque
 });
 router.get('/biographies', authMiddleware.validateToken, async (req: express.Request, res: express.Response) => {
   await platformController.handleBiographies(req, res);
+});
+
+router.post(`/biographies/:id/start`, authMiddleware.validateToken, async (req: express.Request, res: express.Response) => {
+  await platformController.handleStartBiography(req, res);
 });
 
 // Ruta para obtener todas las preguntas disponibles

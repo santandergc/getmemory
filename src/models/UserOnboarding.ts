@@ -22,12 +22,14 @@ interface IUserOnboarding extends Document {
       phone: string;
       country: string;
       timeZone: string;
+      isGift?: boolean;
     },
     questions: Array<{
       questionId: number;
       text: string;
       minWords: number;
       isCompleted: boolean;
+      chapter: string;
     }>;
     reminder: {
       recurrency: string;
@@ -36,6 +38,7 @@ interface IUserOnboarding extends Document {
       mails: string[];
       active: boolean;
     }
+    isGift: boolean;
   }>;
   status: 'pending' | 'active' | 'paused' | 'completed';
   lastLogin: Date;              
@@ -128,9 +131,13 @@ const userOnboardingSchema = new Schema<IUserOnboarding>({
         type: Number,
         default: 300,
       },
-      completed: {
+      isCompleted: {
         type: Boolean,
         default: false,
+      },
+      chapter: {
+        type: String,
+        default: '',
       }
     }],
     reminder: {
@@ -147,6 +154,10 @@ const userOnboardingSchema = new Schema<IUserOnboarding>({
         type: Boolean,
         default: true,
       }
+    },
+    isGift: {
+      type: Boolean,
+      default: true,
     }
   }],
   status: {

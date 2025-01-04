@@ -5,7 +5,7 @@ export interface IQuestion extends Document {
   text: string; // Texto de la pregunta
   chapter: string;
   minWords: number;
-  completed: boolean;
+  isCompleted: boolean;
 }
 
 export interface ITemplateQuestion extends Document {
@@ -30,7 +30,7 @@ const questionSchema = new Schema<IQuestion>({
     type: Number,
     required: true,
   },
-  completed: {
+  isCompleted: {
     type: Boolean,
     default: false,
   },

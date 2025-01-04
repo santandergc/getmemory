@@ -28,9 +28,11 @@ export const activateUser = async (user: any, fatherId: ObjectId) => {
       wordCount: 0,
       minWords: q.minWords,
       completedCountMessages: 0,
-      messageCounter: 0
+      messageCounter: 0,
+      chapter: q.chapter
     })),
     started: false,
+    isGift: user.isGift
    }
 
    const userQuestions = new UserQuestions(data);

@@ -45,7 +45,7 @@ Reglas de interacción:
 Formato de respuesta:
 - Mantén un tono conversacional y natural
 - Usa emojis ocasionalmente para mantener calidez
-- Respuestas concisas pero significativas (máximo 3 líneas)
+- Respuestas concisas pero significativas (máximo 1 linea.)
 - Personaliza las respuestas basándote en el historial de la conversación
 `;
 
