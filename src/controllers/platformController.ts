@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import Question from '../models/Question';
-import { activateUser } from '../services/platformService';
+import { activateUser, addMetadataToUser } from '../services/platformService';
 import UserOnboarding from '../models/UserOnboarding';
 import UserQuestion from '../models/UserQuestion';
 import { ObjectId } from 'mongoose';
@@ -228,6 +228,8 @@ export const platformController = {
         await sendTemplateMessageOnboardingPersonal(user.whatsappNumber, firstNameUser);
       }
 
+      addMetadataToUser(user);
+
       await user.save();
       res.status(200).json({ message: 'Biografía iniciada exitosamente' });
     } catch (error) {
@@ -339,7 +341,8 @@ export const platformController = {
           completedCountMessages: 0,
           messageCounter: 0,
           textResult: '',
-          chapter: newQuestion.chapter
+          chapter: newQuestion.chapter,
+          metadata: ''
         });
       }
 
@@ -432,7 +435,7 @@ export const platformController = {
       user.availableUsers -= 1;
       user.usersIds.push(newUser._id as ObjectId); 
       await user.save();
-
+            
       res.status(200).json({ message: 'Configuración completada exitosamente' });
     } catch (error) {
       console.error('Error creating configuration:', error);

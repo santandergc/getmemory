@@ -30,6 +30,7 @@ interface IUserOnboarding extends Document {
       minWords: number;
       isCompleted: boolean;
       chapter: string;
+      metadata: string;
     }>;
     reminder: {
       recurrency: string;
@@ -136,6 +137,10 @@ const userOnboardingSchema = new Schema<IUserOnboarding>({
         default: false,
       },
       chapter: {
+        type: String,
+        default: '',
+      },
+      metadata: {
         type: String,
         default: '',
       }

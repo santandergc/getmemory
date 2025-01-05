@@ -309,6 +309,7 @@ export class QuestionService {
       summary: currentQuestion.summary || '',
       history: currentQuestion.conversationHistory.slice(-5), 
       message: message,
+      metadata: currentQuestion.metadata || '',
     });
 
     // let aiResponse = await filterGenerateQuestionResponse({

@@ -6,6 +6,7 @@ export interface IQuestion extends Document {
   chapter: string;
   minWords: number;
   isCompleted: boolean;
+  metadata: string;
 }
 
 export interface ITemplateQuestion extends Document {
@@ -34,6 +35,10 @@ const questionSchema = new Schema<IQuestion>({
     type: Boolean,
     default: false,
   },
+  metadata: {
+    type: String,
+    default: '',
+  }
 });
 
 const TemplateQuestionSchema: Schema = new Schema({

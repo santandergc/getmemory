@@ -126,6 +126,7 @@ export async function handleIncomingMessageFreeTrial(req: Request, res: Response
           summary: '',
           history: user.history.slice(-5).map(message => message.message), 
           message: processedMessage,
+          metadata: '',
         });
         let aiResponse = await filterGenerateQuestionResponse({
           question: '¿Dónde naciste y cómo era el lugar donde creciste?',

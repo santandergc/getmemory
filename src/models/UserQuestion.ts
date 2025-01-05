@@ -20,6 +20,7 @@ interface IUserQuestion {
   messageCounter: number; // Contador de mensajes para resumen
   textResult: string; // Texto de la respuesta del usuario
   images?: string[]; // Lista de imágenes asociadas a la pregunta
+  metadata: string; // Metadatos asociados a la pregunta
 }
 
 interface IUser extends Document {
@@ -115,6 +116,10 @@ const userQuestionSchema = new Schema<IUserQuestion>({
     type: [String],
     default: [],
   },
+  metadata: {
+    type: String,
+    default: '',
+  }
 })
 
 const userSchema = new Schema<IUser>(
