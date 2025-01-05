@@ -5,6 +5,7 @@ import UserOnboarding from '../models/UserOnboarding';
 import UserQuestion from '../models/UserQuestion';
 import { ObjectId } from 'mongoose';
 import TemplateQuestion from '../models/TemplateQuestion';
+import { sendTemplateMessageOnboardingGift, sendTemplateMessageOnboardingPersonal, sendTemplateMessageReminder } from '../services/whatsappService';
 
 interface OnboardingRequest extends Request {
   user?: any;
@@ -210,26 +211,47 @@ export const platformController = {
   async handleStartBiography(req: OnboardingRequest, res: Response) {
     try {
       const id = req.params.id;
+      const userId = req.user._id;
       const user = await UserQuestion.findById(id);
+      const userOnboarding = await UserOnboarding.findById(userId);
       if (!user) {
         return res.status(404).json({ error: 'Usuario no encontrado' });
       }
       user.started = true;
-      console.log(user.isGift);
-      // ACTIVAR EL USUARIO, ES DECIR, ENVIAR TEMPLATE DE WHATSAPP DE BIENVENIDA
-      // ENVIAR MENSAJE DE BIENVENIDA
-      // si isGift es true, se le envia como regalo. Si es que no, se le envia como usuario normal
-      // crear template de regalo en twilio
-      // Hola (nombre cliente) mucho gusto! Soy Sofía de memori, te escribo por que (nombre comprador) te ha enviado un regalo. Empezamos?
-      // Hola (nombre comprador)! Que bueno verte por aquí. Estas listo para empezar?
-      // Buenísimo! Te invito a que veas este video para conocernos:
-      // Te invito a que veas este video para explicarte como funciona Memori a través de whatsapp:
+
+      const firstNameUser = user.fullName.split(' ')[0].charAt(0).toUpperCase() + user.fullName.split(' ')[0].slice(1).toLowerCase();
+      const firstNameOnboarding = userOnboarding?.displayName ? userOnboarding.displayName.split(' ')[0].charAt(0).toUpperCase() + userOnboarding.displayName.split(' ')[0].slice(1).toLowerCase() : '';
+
+      if (user.isGift) {
+        await sendTemplateMessageOnboardingGift(user.whatsappNumber, firstNameUser, firstNameOnboarding);
+      } else {        
+        await sendTemplateMessageOnboardingPersonal(user.whatsappNumber, firstNameUser);
+      }
 
       await user.save();
       res.status(200).json({ message: 'Biografía iniciada exitosamente' });
     } catch (error) {
       console.error('Error starting biography:', error);
       res.status(500).json({ error: 'Error al iniciar la biografía' });
+    }
+  },
+
+  async handleReminderBiography(req: OnboardingRequest, res: Response) {
+    try {
+      const userId = req.params.id;
+      const buyerId = req.user._id;
+      const buyer = await UserOnboarding.findById(buyerId);
+      const user = await UserQuestion.findById(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'Usuario no encontrado' });
+      }
+      const userFirstName = user.fullName.split(' ')[0].charAt(0).toUpperCase() + user.fullName.split(' ')[0].slice(1).toLowerCase();
+      const buyerFirstName = buyer?.displayName ? buyer.displayName.split(' ')[0].charAt(0).toUpperCase() + buyer.displayName.split(' ')[0].slice(1).toLowerCase() : '';
+      await sendTemplateMessageReminder(user.whatsappNumber, userFirstName, buyerFirstName);
+      res.status(200).json({ message: 'Reminder enviado exitosamente' });
+    } catch (error) {
+      console.error('Error getting questions:', error);
+      res.status(500).json({ error: 'Error al obtener las preguntas' });
     }
   },
 

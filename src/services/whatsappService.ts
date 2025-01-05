@@ -24,12 +24,68 @@ export const sendWhatsAppMessage = async (to: string, message: string, from?: st
   }
 }; 
 
-export const sendTemplateMessage = async (to: string, from?: string) => {
+export const sendTemplateMessageNextQuestion = async (to: string, templateName: string, question: string, from?: string) => {
   try {
     const message = await client.messages.create({
-      contentSid: "HX83640330ea1364245ea951932f7210a1",
+      contentSid: templateName,
       from: `whatsapp:${from || process.env.TWILIO_WHATSAPP_NUMBER}`,
       to: `whatsapp:${to}`,
+      contentVariables: JSON.stringify({
+        chapter: question
+      })
+    });
+    return message;
+  } catch (error) {
+    console.error('Error enviando el mensaje de plantilla:', error);
+    throw error;
+  }
+};
+
+export const sendTemplateMessageOnboardingGift = async (to: string, user: string, buyer: string, from?: string) => {
+  try {
+    const message = await client.messages.create({
+      contentSid: 'HX468ce05e9a6d9d41a8ae070c86e7fac8',
+      from: `whatsapp:${from || process.env.TWILIO_WHATSAPP_NUMBER}`,
+      to: `whatsapp:${to}`,
+      contentVariables: JSON.stringify({
+        user: user,
+        buyer: buyer
+      })
+    });
+    return message;
+  } catch (error) {
+    console.error('Error enviando el mensaje de plantilla:', error);
+    throw error;
+  }
+};
+
+export const sendTemplateMessageOnboardingPersonal = async (to: string, user: string, from?: string) => {
+  try {
+    const message = await client.messages.create({
+      contentSid: 'HX3db7b911aec6f30b4d1a1109424afff2',
+      from: `whatsapp:${from || process.env.TWILIO_WHATSAPP_NUMBER}`,
+      to: `whatsapp:${to}`,
+      contentVariables: JSON.stringify({
+        user: user
+      })
+    });
+    return message;
+  } catch (error) {
+    console.error('Error enviando el mensaje de plantilla:', error);
+    throw error;
+  }
+};
+
+export const sendTemplateMessageReminder = async (to: string, user: string, buyer: string, from?: string) => {
+  try {
+    const message = await client.messages.create({
+      contentSid: 'HX8a500511c4032b15bd7b623c73235658',
+      from: `whatsapp:${from || process.env.TWILIO_WHATSAPP_NUMBER}`,
+      to: `whatsapp:${to}`,
+      contentVariables: JSON.stringify({
+        user: user,
+        buyer: buyer
+      })
     });
     return message;
   } catch (error) {

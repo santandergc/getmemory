@@ -58,6 +58,11 @@ router.post(`/biographies/:id/start`, authMiddleware.validateToken, async (req: 
   await platformController.handleStartBiography(req, res);
 });
 
+router.post('/biographies/:id/reminder', authMiddleware.validateToken, async (req: express.Request, res: express.Response) => {
+  await platformController.handleReminderBiography(req, res);
+});
+
+
 // Ruta para obtener todas las preguntas disponibles
 router.get('/questions/default/:userId', authMiddleware.validateToken, async (req: express.Request, res: express.Response) => {
   await platformController.handleQuestions(req, res);

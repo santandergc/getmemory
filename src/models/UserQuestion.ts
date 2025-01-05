@@ -181,7 +181,7 @@ const userSchema = new Schema<IUser>(
       },
       active: {
         type: Boolean,
-        default: false,
+        default: true,
       },
       mails: {
         type: [String],

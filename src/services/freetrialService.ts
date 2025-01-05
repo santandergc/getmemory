@@ -1,5 +1,4 @@
 import UserFreeTrial from '../models/UserFreeTrail';
-import { sendTemplateMessage, sendWhatsAppAudio, sendWhatsAppMessage, sendWhatsAppVideo } from './whatsappService';
 
 export class FreetrialService {
   /**
