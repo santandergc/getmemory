@@ -304,35 +304,57 @@ export class QuestionService {
       await user.save();
     }
     
-    const response = await generateQuestionResponse({
+    const aiResponse = await generateQuestionResponse({
       question: currentQuestion.text,
       summary: currentQuestion.summary || '',
       history: currentQuestion.conversationHistory.slice(-5), 
       message: message,
     });
-    let aiResponse = await filterGenerateQuestionResponse({
-      question: currentQuestion.text,
-      summary: currentQuestion.summary || '',
-      history: currentQuestion.conversationHistory.slice(-5),
-      message: message,
-      aiResponse: response,
-    });
-    if (aiResponse.startsWith('"') && aiResponse.endsWith('"')) {
-      aiResponse = aiResponse.slice(1, -1);
+
+    // let aiResponse = await filterGenerateQuestionResponse({
+    //   question: currentQuestion.text,
+    //   summary: currentQuestion.summary || '',
+    //   history: currentQuestion.conversationHistory.slice(-5),
+    //   message: message,
+    //   aiResponse: response,
+    // });
+    // if (aiResponse.startsWith('"') && aiResponse.endsWith('"')) {
+    //   aiResponse = aiResponse.slice(1, -1);
+    // }
+
+    // Modificaciones al texto con 50% de probabilidad cada una
+    let modifiedResponse = aiResponse;
+
+    // Quitar "¿" - 50% probabilidad
+    if (Math.random() < 0.5) {
+      modifiedResponse = modifiedResponse.replace(/¿/g, '');
     }
-  
+
+    // Quitar "¡" - 50% probabilidad
+    if (Math.random() < 0.5) {
+      modifiedResponse = modifiedResponse.replace(/¡/g, '');
+    }
+
+    // Primera mayúscula a minúscula - 50% probabilidad
+    if (Math.random() < 0.5) {
+      const firstUpperCase = modifiedResponse.match(/[A-ZÁ-Ú]/);
+      if (firstUpperCase) {
+        const index = modifiedResponse.indexOf(firstUpperCase[0]);
+        modifiedResponse = 
+          modifiedResponse.substring(0, index) + 
+          firstUpperCase[0].toLowerCase() + 
+          modifiedResponse.substring(index + 1);
+      }
+    }
+
     // Agregar respuesta del bot al historial
     currentQuestion.conversationHistory.push({
-      message: aiResponse,
+      message: modifiedResponse,
       type: 'outgoing',
       timestamp: new Date(),
     });
 
-
-    
-
-    if (aiResponse) await sendWhatsAppMessage(user.whatsappNumber, aiResponse);
-
+    if (modifiedResponse) await sendWhatsAppMessage(user.whatsappNumber, modifiedResponse);
 
     if (currentQuestion.isCompleted && currentQuestion.completedCountMessages % 5 === 0) {
       sendTemplate = true;
