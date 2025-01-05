@@ -179,7 +179,6 @@ export class QuestionService {
 
         // Calcular cantidad de capítulos únicos
         const uniqueChapters = [...new Set(user.questions.map((q: any) => q.chapter))];
-        const totalChapters = uniqueChapters.length;
         
         // Obtener la posición del capítulo actual
         const currentChapterIndex = uniqueChapters.indexOf(nextChapter);
@@ -216,6 +215,7 @@ export class QuestionService {
           `¡Excelente! Ahora vamos a la siguiente pregunta del capítulo "*${nextChapter}*". \n\nLlevas ${currentQuestionNumberChapter} de ${totalQuestionsChapter} preguntas. 🙌\n\n¿Continuamos?`
         );
       }
+      currentQuestion.isCompleted = true;
       user.currentQuestionId++;
       await user.save();
       return '';
@@ -296,7 +296,7 @@ export class QuestionService {
   
     let sendTemplate = false;
     // Validar si alcanza las 1000 palabras
-    if (currentQuestion.wordCount >= 10 && !currentQuestion.isCompleted) {
+    if (currentQuestion.wordCount >= (currentQuestion.minWords || 250) && !currentQuestion.isCompleted) {
      // Actualizar estado de completitud
      currentQuestion.isCompleted = true;
      sendTemplate = true;
