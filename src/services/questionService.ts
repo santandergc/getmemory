@@ -388,7 +388,7 @@ export class QuestionService {
 
 function generateQuestionsPreview(questions: any[]): string {
   const questionsList = questions
-    .map((q) => `- ${q.text}`)
+    .map((q, index) => `${index + 1}. ${q.text}`)
     .join('\n');
   
   return `En este capítulo responderemos las siguientes preguntas:\n\n${questionsList}`;
