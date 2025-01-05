@@ -9,31 +9,56 @@ interface AuthRequest extends Request {
 export const authController = {
   async handleGoogleAuth(req: AuthRequest, res: Response) {
     try {
+      console.log('handleGoogleAuth');
       const { email, displayName, photoURL, firebaseId } = req.body;
       const googleUser = req.user; // Info validada del token de Google
 
-      let user = await UserOnboarding.findOne({ 
+      const user = await UserOnboarding.findOne({ 
         $or: [
           { firebaseId },
           { email: googleUser.email }
         ]
       });
 
-      if (user) {
-        user.lastLogin = new Date();
-        user.displayName = displayName || googleUser.name;
-        user.photoURL = photoURL || googleUser.picture;
-        await user.save();
-      } else {
-        user = await UserOnboarding.create({
-          firebaseId,
-          email: googleUser.email,
-          displayName: displayName || googleUser.name,
-          photoURL: photoURL || googleUser.picture,
-          status: 'pending',
-          currentPhase: 'onboarding'
-        });
+      if (!user) {
+        return res.status(404).json({ error: 'Usuario no encontrado' });
       }
+
+      user.lastLogin = new Date();
+      user.displayName = displayName || googleUser.name;
+      user.photoURL = photoURL || googleUser.picture;
+      user.firebaseId = firebaseId;
+      user.email = googleUser.email;
+      await user.save();
+
+
+
+      // else {
+      //   try {
+      //     user = await UserOnboarding.create({
+      //       firebaseId,
+      //       email: googleUser.email,
+      //       displayName: displayName || googleUser.name,
+      //       photoURL: photoURL || googleUser.picture,
+      //       status: 'pending',
+      //     });
+      //   } catch (error: any) {
+      //     if (error.code === 11000) {
+      //       user = await UserOnboarding.findOne({ firebaseId });
+      //       if (user) {
+      //         user.lastLogin = new Date();
+      //         user.displayName = displayName || googleUser.name;
+      //         user.photoURL = photoURL || googleUser.picture;
+      //         user.email = googleUser.email;
+      //         await user.save();
+      //       } else {
+      //         throw error;
+      //       }
+      //     } else {
+      //       throw error;
+      //     }
+      //   }
+      // }
 
       const token = jwt.sign(
         { 
@@ -51,7 +76,6 @@ export const authController = {
           email: user.email,
           displayName: user.displayName,
           photoURL: user.photoURL,
-          currentPhase: user.currentPhase,
           createdAt: user.createdAt,
           updatedAt: user.updatedAt
         },
@@ -74,7 +98,6 @@ export const authController = {
           email: user.email,
           displayName: user.displayName,
           photoURL: user.photoURL,
-          currentPhase: user.currentPhase,
           createdAt: user.createdAt,
           updatedAt: user.updatedAt
         }

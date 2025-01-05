@@ -6,36 +6,43 @@ interface IUserOnboarding extends Document {
   displayName: string | null;      // Nombre mostrado de Google
   photoURL: string | null;         // URL de la foto de perfil de Google
   primaryPhone: string;            // Número de WhatsApp del usuario final
-  userInfo: {
-    fullName: string;
-    birthDate: string;
-    sex: string;
-    phone: string;
-    country: string;
-  };
-  selectedQuestions: [{
-    questionId: number;
-    text: string;
-    isActive: boolean;
-  }];
-  schedule: {
-    days: string[];                // ['Monday', 'Wednesday', 'Friday']
-    time: string;                  // 'HH:mm' format
-    timezone: string;              // IANA timezone format
-  };
-  trackingPhones: [{
-    phoneNumber: string;
-    name: string;
-    notificationType: 'daily' | 'weekly' | 'monthly';
-  }];
+  availableUsers: number;          // Cantidad de usuarios disponibles sin onboarding
+  usersIds: [Schema.Types.ObjectId];
+  users: Array<{
+    completed: boolean;
+    state: {
+      info: boolean;
+      questions: boolean;
+      reminder: boolean;
+    },
+    info: {
+      fullName: string;
+      birthDate: string;
+      gender: string;
+      phone: string;
+      country: string;
+      timeZone: string;
+      isGift?: boolean;
+    },
+    questions: Array<{
+      questionId: number;
+      text: string;
+      minWords: number;
+      isCompleted: boolean;
+      chapter: string;
+      metadata: string;
+    }>;
+    reminder: {
+      recurrency: string;
+      time: string;
+      timeZone: string;
+      mails: string[];
+      active: boolean;
+    }
+    isGift: boolean;
+  }>;
   status: 'pending' | 'active' | 'paused' | 'completed';
-  currentPhase: {
-    onboarding: boolean;
-    question: boolean;
-    configuration: boolean;
-    edition: boolean;
-  },
-  lastLogin: Date;                 // Última vez que inició sesión
+  lastLogin: Date;              
   createdAt: Date;
   updatedAt: Date;
 }
@@ -43,7 +50,7 @@ interface IUserOnboarding extends Document {
 const userOnboardingSchema = new Schema<IUserOnboarding>({
   firebaseId: {
     type: String,
-    required: true,
+    sparse: true,
     unique: true,
   },
   email: {
@@ -60,115 +67,108 @@ const userOnboardingSchema = new Schema<IUserOnboarding>({
     type: String,
     default: null,
   },
-  primaryPhone: {
-    type: String,
-    unique: true,
-    sparse: true,  // Permite nulos y mantiene unicidad
-    trim: true,
+  usersIds: [{
+    type: Schema.Types.ObjectId,
+    ref: 'UserQuestions',
+    required: false,
+  }],
+  availableUsers: {
+    type: Number,
+    default: 0,
   },
-  userInfo: {
-    fullName: {
-      type: String,
-      trim: true,
+  users: [{
+    completed: {
+      type: Boolean,
+      default: false,
     },
-    sex: {
-      type: String,
-      enum: ['male', 'female', 'other'],
-      default: 'other',
+    state: {
+      info: {
+        type: Boolean,
+        default: false,
+      },
+      questions: {
+        type: Boolean,
+        default: false,
+      },
+      reminder: {
+        type: Boolean,
+        default: false,
+      },
     },
-    birthDate: {
-      type: String,
+    info: {
+      fullName: {
+        type: String,
+        trim: true,
+      },
+      birthDate: {
+        type: String,
+      },
+      gender: {
+        type: String,
+        enum: ['male', 'female'],
+      },
+      phone: {
+        type: String,
+        trim: true,
+      },
+      country: {
+        type: String,
+        trim: true,
+      },
+      timeZone: {
+        type: String,
+      },
     },
-    address: {
-      type: String,
-      trim: true,
+    questions: [{
+      questionId: {
+        type: Number,
+        required: true,
+      },
+      text: {
+        type: String,
+        required: true,
+      },
+      minWords: {
+        type: Number,
+        default: 300,
+      },
+      isCompleted: {
+        type: Boolean,
+        default: false,
+      },
+      chapter: {
+        type: String,
+        default: '',
+      },
+      metadata: {
+        type: String,
+        default: '',
+      }
+    }],
+    reminder: {
+      recurrency: {
+        type: String,
+      },
+      time: {
+        type: String,
+      },
+      timeZone: {
+        type: String,
+      },
+      active: {
+        type: Boolean,
+        default: true,
+      }
     },
-    country: {
-      type: String,
-      trim: true,
-    },
-    phone: {
-      type: String,
-      trim: true,
-    },
-  },
-  selectedQuestions: [{
-    questionId: {
-      type: Number,
-      required: true,
-    },
-    text: {
-      type: String,
-      required: true,
-    },
-    isActive: {
+    isGift: {
       type: Boolean,
       default: true,
-    },
-  }],
-  schedule: {
-    days: {
-      type: [String],
-      validate: {
-        validator: function(days: string[]) {
-          const validDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-          return days.every(day => validDays.includes(day));
-        },
-        message: 'Invalid day format'
-      }
-    },
-    time: {
-      type: String,
-      validate: {
-        validator: function(time: string) {
-          return /^([0-1][0-9]|2[0-3]):[0-5][0-9]$/.test(time);
-        },
-        message: 'Invalid time format. Use HH:mm'
-      }
-    },
-    timezone: {
-      type: String,
-    }
-  },
-  trackingPhones: [{
-    phoneNumber: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    notificationType: {
-      type: String,
-      enum: ['daily', 'weekly', 'monthly'],
-      default: 'weekly',
     }
   }],
   status: {
     type: String,
     enum: ['pending', 'active', 'paused', 'completed'],
     default: 'pending',
-  },
-  currentPhase: {
-    onboarding: {
-      type: Boolean,
-      default: true,
-    },
-    question: {
-      type: Boolean,
-      default: false,
-    },
-    configuration: {
-      type: Boolean,
-      default: false,
-    },
-    edition: {
-      type: Boolean,
-      default: false,
-    },
   },
   lastLogin: {
     type: Date,
