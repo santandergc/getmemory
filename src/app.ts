@@ -14,7 +14,7 @@ const app = express();
 
 // Configurar CORS para permitir conexiones locales
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:5173', 'https://memori-app.netlify.app'],
+  origin: ['http://localhost:3000', 'http://localhost:5173', 'https://app.getmemori.org'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Métodos permitidos
   allowedHeaders: ['Content-Type', 'Authorization'], // Encabezados permitidos
   credentials: true
