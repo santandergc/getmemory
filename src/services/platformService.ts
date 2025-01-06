@@ -1,5 +1,5 @@
 import { ObjectId } from "mongoose";
-import UserQuestions from "../models/UserQuestion";
+import User from '../models/UserQuestion';
 import { generateChapterMetadata, generateTextFromConversation } from './openAIQuestionService';
 
 export const activateUser = async (user: any, fatherId: ObjectId) => {
@@ -37,7 +37,7 @@ export const activateUser = async (user: any, fatherId: ObjectId) => {
     isGift: user.isGift
    }
 
-   const userQuestions = new UserQuestions(data);
+   const userQuestions = new User(data);
    await userQuestions.save();
 
    return userQuestions;
@@ -82,7 +82,7 @@ export const addMetadataToUser = async (user: any): Promise<void> => {
     }
 
     // Actualizar el documento completo
-    const result = await UserQuestions.findByIdAndUpdate(
+    const result = await User.findByIdAndUpdate(
       user._id,
       { $set: { questions: questions } },
       { new: true }
@@ -101,7 +101,25 @@ export const addMetadataToUser = async (user: any): Promise<void> => {
 };
 
 export const addTextToQuestionAI = async (user: any, currentQuestionId: number) => {
-  const text = await generateTextFromConversation(user.questions[currentQuestionId].text, user.questions[currentQuestionId].conversationHistory);
-  user.questions[currentQuestionId].textResult = text;
-  await user.save();
+  try {
+    const text = await generateTextFromConversation(user.questions[currentQuestionId].text, user.questions[currentQuestionId].conversationHistory);
+    
+    // Usar findOneAndUpdate para actualizar de manera atómica
+    const updatedUser = await User.findOneAndUpdate(
+      { _id: user._id },
+      { $set: { [`questions.${currentQuestionId}.textResult`]: text } },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedUser) {
+      throw new Error('No se pudo actualizar el usuario');
+    }
+
+    // Actualizar el objeto user en memoria con los nuevos datos
+    user.questions[currentQuestionId].textResult = text;
+    
+  } catch (error) {
+    console.error('Error al actualizar el texto de la pregunta:', error);
+    throw error;
+  }
 }
