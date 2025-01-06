@@ -57,7 +57,7 @@ export class QuestionService {
 
       if (user.onboarding.history.length === 0) {
         await sendWhatsAppMessage(user.whatsappNumber, 'Buenísimo! Te invito a que veas este video para conocernos y para explicarte como funciona Memori');
-        await sendWhatsAppVideo(user.whatsappNumber, 'https://drive.google.com/uc?id=1FQZJ8lgDF91d_pH4xKJ_gTf7I4GtzYyd');
+        await sendWhatsAppVideo(user.whatsappNumber, 'https://drive.google.com/uc?id=1FumCpfu2W0nIdio41WqWrf8xg_pthyFu');
         await new Promise(resolve => setTimeout(resolve, 15000)); 
         await sendWhatsAppMessage(user.whatsappNumber, 'Si tienes alguna pregunta, estoy aquí para ayudar. \n\n¿Vamos por el primer capítulo? 😊');
         user.onboarding.history.push({
