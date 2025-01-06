@@ -216,7 +216,7 @@ export class QuestionService {
         );
       }
       currentQuestion.isCompleted = true;
-      addTextToQuestionAI(user, user.currentQuestionId, currentQuestion.text, currentQuestion.conversationHistory);
+      addTextToQuestionAI(user, user.currentQuestionId);
       user.currentQuestionId++;
       await user.save();
       return '';

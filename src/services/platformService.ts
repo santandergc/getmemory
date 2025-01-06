@@ -100,8 +100,8 @@ export const addMetadataToUser = async (user: any): Promise<void> => {
   }
 };
 
-export const addTextToQuestionAI = async (user: any, currentQuestionId: number, title: string, history: string[]) => {
-  const text = await generateTextFromConversation(title, history);
+export const addTextToQuestionAI = async (user: any, currentQuestionId: number) => {
+  const text = await generateTextFromConversation(user.questions[currentQuestionId].text, user.questions[currentQuestionId].conversationHistory);
   user.questions[currentQuestionId].textResult = text;
   await user.save();
 }

@@ -798,7 +798,7 @@ El texto debe estar organizado en párrafos claros, escrito en un lenguaje perso
     messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
     model: "gpt-4o",
     temperature: 0.7,
-    max_tokens: 1000,
+    max_tokens: 750,
   });
 
   return completion.choices[0]?.message?.content || '';
