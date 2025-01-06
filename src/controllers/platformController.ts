@@ -127,7 +127,6 @@ export const platformController = {
   async handleDashboard(req: OnboardingRequest, res: Response) {
     try {
       const userId = req.user._id;
-      console.log('userId', userId);
       
       // Find user in database
       const user = await UserOnboarding.findById(userId);
@@ -158,7 +157,6 @@ export const platformController = {
 
       // Encuentra el primer usuario no completado
       const firstUserNotCompleted = user.users.find(user => !user.completed);
-      console.log('join to dashboard');
 
       res.status(200).json({
         usersAvailable: user.availableUsers > 0,

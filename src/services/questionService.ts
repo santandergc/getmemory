@@ -37,7 +37,6 @@ export class QuestionService {
    * Maneja la lógica para cada etapa según la etapa actual del usuario.
    */
   static async handleStage(user: any, message: string): Promise<string> {
-    console.log(message);
     switch (user.currentStage) {
       case 'new':
         return this.handleNew(user, message);

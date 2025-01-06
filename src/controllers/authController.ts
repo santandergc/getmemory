@@ -9,7 +9,6 @@ interface AuthRequest extends Request {
 export const authController = {
   async handleGoogleAuth(req: AuthRequest, res: Response) {
     try {
-      console.log('handleGoogleAuth');
       const { email, displayName, photoURL, firebaseId } = req.body;
       const googleUser = req.user; // Info validada del token de Google
 

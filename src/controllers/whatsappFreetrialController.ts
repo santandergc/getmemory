@@ -63,7 +63,6 @@ export async function handleIncomingMessageFreeTrial(req: Request, res: Response
         type: 'incoming',
         timestamp: new Date(),
       });
-      console.log(processedMessage);
 
       if (user.status === 0) {
         // await sendWhatsAppMessage(
