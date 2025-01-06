@@ -786,6 +786,7 @@ Outgoing es el asistente que está respondiendo.
    - **Fluidez y claridad:** Mejora la gramática y el estilo del texto para que sea claro y fácil de leer, sin cambiar el significado de las palabras del usuario.
    - **Narrativa natural:** Organiza las ideas en un flujo lógico y humano, pero sin forzar una estructura de resumen o análisis. Escribe como si el usuario estuviera expresando directamente sus pensamientos.
    - **Tono emocional:** Refleja las emociones compartidas por el usuario. Si no son evidentes, mantén un tono neutral y cálido.
+   - Adaptate al tono, lenguaje y humor. No seas muy formal. si escribe jajaja en la conversación, expresalo. La idea es que el texto sea fiel al usuario.
 
 3. Mantén la narrativa lo más cercana posible al estilo y personalidad del usuario. No intentes embellecer o dramatizar el texto innecesariamente.
 
