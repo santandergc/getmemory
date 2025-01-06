@@ -1,7 +1,8 @@
 import User from '../models/UserQuestion';
 import Question from '../models/Question';
-import { filterGenerateQuestionResponse, generateQuestionMessage, generateQuestionResponse, summarizeConversationHistory, filterOnboardingIntent, generateOnboardingResponse } from './openAIQuestionService';
+import { filterGenerateQuestionResponse, generateQuestionMessage, generateQuestionResponse, summarizeConversationHistory, filterOnboardingIntent, generateOnboardingResponse, generateTextFromConversation } from './openAIQuestionService';
 import { sendTemplateMessageNextQuestion, sendWhatsAppAudio, sendWhatsAppMessage, sendWhatsAppVideo } from './whatsappService';
+import { addTextToQuestionAI } from './platformService';
 
 export class QuestionService {
   /**
@@ -215,6 +216,7 @@ export class QuestionService {
         );
       }
       currentQuestion.isCompleted = true;
+      addTextToQuestionAI(user, user.currentQuestionId, currentQuestion.text, currentQuestion.conversationHistory);
       user.currentQuestionId++;
       await user.save();
       return '';

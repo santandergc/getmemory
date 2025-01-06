@@ -1,6 +1,6 @@
 import { ObjectId } from "mongoose";
 import UserQuestions from "../models/UserQuestion";
-import { generateChapterMetadata } from './openAIQuestionService';
+import { generateChapterMetadata, generateTextFromConversation } from './openAIQuestionService';
 
 export const activateUser = async (user: any, fatherId: ObjectId) => {
     // crear usuario en tabla UserQuestions
@@ -99,3 +99,9 @@ export const addMetadataToUser = async (user: any): Promise<void> => {
     throw error;
   }
 };
+
+export const addTextToQuestionAI = async (user: any, currentQuestionId: number, title: string, history: string[]) => {
+  const text = await generateTextFromConversation(title, history);
+  user.questions[currentQuestionId].textResult = text;
+  await user.save();
+}
