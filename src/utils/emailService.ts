@@ -24,6 +24,7 @@ const getWelcomeTemplate = (userName: string): string => {
         <div class="content">
           <h2>Hola ${userName},</h2>
           <p>¡Nos alegra mucho tenerte con nosotros! Tu cuenta ha sido creada exitosamente.</p>
+          <p>Recuerda que debes ingresar a la plataforma con este mismo correo.</p>
           <p>Ahora podrás acceder a Memori utilizando tu cuenta de Google para:</p>
           <ul>
             <li>Crear y guardar tus memorias más preciadas</li>
@@ -31,7 +32,7 @@ const getWelcomeTemplate = (userName: string): string => {
             <li>Preservar momentos especiales para siempre</li>
           </ul>
           <center>
-            <a href="https://getmemori.org" class="button" style="color: white;">Comenzar ahora</a>
+            <a href="https://app.getmemori.org" class="button" style="color: white; background-color: #4CAF50; font-weight: bold;">Comenzar ahora</a>
           </center>
         </div>
         <div class="footer">

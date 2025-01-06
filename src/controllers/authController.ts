@@ -12,7 +12,7 @@ export const authController = {
       const { email, displayName, photoURL, firebaseId } = req.body;
       const googleUser = req.user; // Info validada del token de Google
 
-      const user = await UserOnboarding.findOne({ 
+      let user = await UserOnboarding.findOne({ 
         $or: [
           { firebaseId },
           { email: googleUser.email }
@@ -20,7 +20,30 @@ export const authController = {
       });
 
       if (!user) {
-        return res.status(404).json({ error: 'Usuario no encontrado' });
+        try {
+          user = await UserOnboarding.create({
+            firebaseId,
+            email: googleUser.email,
+            displayName: displayName || googleUser.name,
+            photoURL: photoURL || googleUser.picture,
+            status: 'pending',
+          });
+        } catch (error: any) {
+          if (error.code === 11000) {
+            user = await UserOnboarding.findOne({ firebaseId });
+            if (user) {
+              user.lastLogin = new Date();
+              user.displayName = displayName || googleUser.name;
+              user.photoURL = photoURL || googleUser.picture;
+              user.email = googleUser.email;
+              await user.save();
+            } else {
+              throw error;
+            }
+          } else {
+            throw error;
+          }
+        }
       }
 
       user.lastLogin = new Date();
@@ -32,32 +55,7 @@ export const authController = {
 
 
 
-      // else {
-      //   try {
-      //     user = await UserOnboarding.create({
-      //       firebaseId,
-      //       email: googleUser.email,
-      //       displayName: displayName || googleUser.name,
-      //       photoURL: photoURL || googleUser.picture,
-      //       status: 'pending',
-      //     });
-      //   } catch (error: any) {
-      //     if (error.code === 11000) {
-      //       user = await UserOnboarding.findOne({ firebaseId });
-      //       if (user) {
-      //         user.lastLogin = new Date();
-      //         user.displayName = displayName || googleUser.name;
-      //         user.photoURL = photoURL || googleUser.picture;
-      //         user.email = googleUser.email;
-      //         await user.save();
-      //       } else {
-      //         throw error;
-      //       }
-      //     } else {
-      //       throw error;
-      //     }
-      //   }
-      // }
+      
 
       const token = jwt.sign(
         { 

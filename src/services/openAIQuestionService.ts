@@ -737,5 +737,23 @@ Estructura tu respuesta en formato JSON exactamente así:
 };
 
 
+export const generateTextFromConversation= async (question: string, conversation: string[]): Promise<string> => {
+  const systemPrompt = `
+  Eres un asistente que genera texto a partir de una conversación.
+  `;
 
+  const userPrompt = `
+  Pregunta: "${question}"
+  Conversación: ${conversation.join('\n')}
+  `;
+
+  const completion = await openai.chat.completions.create({
+    messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
+    model: "gpt-4o",
+    temperature: 0.7,
+    max_tokens: 1000,
+  });
+
+  return completion.choices[0]?.message?.content || '';
+};
 

@@ -39,23 +39,12 @@ export const authMiddleware = {
       // Si falla la verificación JWT, intentamos con Firebase
       try {
         const decodedFirebaseToken = await firebaseAuth().verifyIdToken(token);
+        const user = await UserOnboarding.findOne({ firebaseId: decodedFirebaseToken.uid });
         
-        // Usamos findOneAndUpdate con upsert para evitar duplicados
-        const user = await UserOnboarding.findOneAndUpdate(
-          { firebaseId: decodedFirebaseToken.uid },
-          {
-            $setOnInsert: {
-              firebaseId: decodedFirebaseToken.uid,
-              email: decodedFirebaseToken.email || '',
-              displayName: decodedFirebaseToken.name || '',
-              photoURL: decodedFirebaseToken.picture || '',
-            }
-          },
-          { 
-            upsert: true,
-            new: true
-          }
-        );
+        if (!user) {
+          res.status(404).json({ error: 'Usuario no encontrado' });
+          return;
+        }
         
         req.user = user;
         next();
@@ -66,7 +55,7 @@ export const authMiddleware = {
     }
   },
 
-  validateFirebaseToken: async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  validateFirebaseToken: (req: AuthRequest, res: Response, next: NextFunction): void => {
     const { idToken } = req.body;
 
     if (!idToken) {
@@ -74,31 +63,20 @@ export const authMiddleware = {
       return;
     }
 
-    try {
-      const decodedToken = await firebaseAuth().verifyIdToken(idToken);
-      
-      // Usamos findOneAndUpdate con upsert para evitar duplicados
-      const user = await UserOnboarding.findOneAndUpdate(
-        { firebaseId: decodedToken.uid },
-        {
-          $setOnInsert: {
-            firebaseId: decodedToken.uid,
-            email: decodedToken.email || '',
-            displayName: decodedToken.name || '',
-            photoURL: decodedToken.picture || '',
-          }
-        },
-        { 
-          upsert: true,
-          new: true
-        }
-      );
-
-      req.user = user;
-      next();
-    } catch (error) {
-      console.error('Error validando token de Firebase:', error);
-      res.status(401).json({ error: 'Token inválido' });
-    }
+    firebaseAuth()
+      .verifyIdToken(idToken)
+      .then(decodedToken => {
+        req.user = {
+          uid: decodedToken.uid,
+          email: decodedToken.email,
+          name: decodedToken.name,
+          picture: decodedToken.picture
+        };
+        next();
+      })
+      .catch(error => {
+        console.error('Error validando token de Firebase:', error);
+        res.status(401).json({ error: 'Token inválido' });
+      });
   }
 }; 
