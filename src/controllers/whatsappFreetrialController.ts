@@ -154,19 +154,20 @@ export async function handleIncomingMessageFreeTrial(req: Request, res: Response
           'Qué te ha parecido la experiencia? Es muy simple, cierto? Espero que te haya servido para recordar cosas importantes de tu infancia. \n\nTe dejo un ejemplo de una biografía creada por Memori',
           NUMBER
         );
+        await new Promise(resolve => setTimeout(resolve, 1000)); 
         await sendWhatsAppMessage(
           user.whatsappNumber,
           'https://getmemori.org/biography',
           NUMBER
         );
-        await new Promise(resolve => setTimeout(resolve, 4000)); 
+        await new Promise(resolve => setTimeout(resolve, 7000)); 
         await sendWhatsAppMessage(
           user.whatsappNumber,
-          'Me encantaría que te unieras a Memori, para conmemor tu historia y la de tus seres queridos para siempre.\n\nEn el sigueinte link puedes acceder a la tuya 😍\n\nhttps://buy.stripe.com/test_7sI5ongqZaZfgMM288',
+          'Me encantaría que te unieras a Memori, para conmemor tu historia y la de tus seres queridos para siempre.\n\nEn el siguiente link puedes acceder a la tuya 😍\n\nhttps://buy.stripe.com/test_7sI5ongqZaZfgMM288',
           NUMBER
         );
         user.history.push({
-          message: ' Qué te ha parecido la experiencia? Es muy simple, pero espero que te haya servido para recordar cosas importantes de tu infancia. \n\nAcá te dejo un link para que puedas ver las biografías que creamos 😊\n\n https://getmemori.org/biography\n\n Me encantaría que te unieras a Memori, para conmemor tu historia y la de tus seres queridos para siempre.\n\nEn el sigueinte link puedes acceder a la tuya 😍\n\n https://buy.stripe.com/test_7sI5ongqZaZfgMM288',
+          message: ' Qué te ha parecido la experiencia? Es muy simple, pero espero que te haya servido para recordar cosas importantes de tu infancia. \n\nAcá te dejo un link para que puedas ver las biografías que creamos 😊\n\n https://getmemori.org/biography\n\n Me encantaría que te unieras a Memori, para conmemor tu historia y la de tus seres queridos para siempre.\n\nEn el siguiente link puedes acceder a la tuya 😍\n\n https://buy.stripe.com/test_7sI5ongqZaZfgMM288',
           type: 'outgoing',
           timestamp: new Date(),
         });
