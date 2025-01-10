@@ -6,7 +6,7 @@ import UserQuestion from '../models/UserQuestion';
 import { ObjectId } from 'mongoose';
 import TemplateQuestion from '../models/TemplateQuestion';
 import { sendTemplateMessageOnboardingGift, sendTemplateMessageOnboardingPersonal, sendTemplateMessageReminder } from '../services/whatsappService';
-import { generateChapters, generateQuestions } from '../services/openAIQuestionService';
+import { generateChapters, generateQuestions, generateTextResult } from '../services/openAIQuestionService';
 
 interface OnboardingRequest extends Request {
   user?: any;
@@ -573,6 +573,16 @@ export const platformController = {
     } catch (error) {
       console.error('Error generating questions:', error);
       res.status(500).json({ error: 'Error al generar las preguntas' });
+    }
+  },
+
+  async handleGenerateTextResult(req: OnboardingRequest, res: Response) {
+    try {
+      const { currentText, instructions, question } = req.body;
+      const result = await generateTextResult(currentText, instructions, question);
+    } catch (error) {
+      console.error('Error generating text result:', error);
+      res.status(500).json({ error: 'Error al generar el texto' });
     }
   }
 };

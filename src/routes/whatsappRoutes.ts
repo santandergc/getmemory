@@ -93,6 +93,10 @@ router.post('/questions/generate-questions', authMiddleware.validateToken, async
   await platformController.handleGenerateQuestions(req, res);
 });
 
+router.post('/questions/generate-text-result', authMiddleware.validateToken, async (req: express.Request, res: express.Response) => {
+  await platformController.handleGenerateTextResult(req, res);
+});
+
 
 // Ruta para actualizar una pregunta específica
 router.put('/questions/:userId/:questionId', authMiddleware.validateToken, async (req: express.Request, res: express.Response) => {

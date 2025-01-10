@@ -93,8 +93,6 @@ export const addMetadataToUser = async (user: any): Promise<void> => {
       throw new Error('No se pudo actualizar el usuario');
     }
 
-    console.log('Metadata actualizada exitosamente');
-
   } catch (error) {
     console.error('Error al agregar metadata al usuario:', error);
     throw error;

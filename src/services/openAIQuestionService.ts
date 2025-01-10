@@ -973,3 +973,54 @@ IMPORTANTE:
 };
 
 
+export const generateTextResult = async (currentText: string, instructions: string, question: string): Promise<string> => {
+  const systemPrompt = `
+Eres un experto editor y escritor biográfico. Tu tarea es mejorar y refinar el texto proporcionado según las instrucciones específicas del usuario, manteniendo la esencia y los detalles personales de la historia original.
+
+REGLAS IMPORTANTES:
+1. Mantén la voz y el estilo personal del autor original
+2. Conserva todos los detalles específicos y experiencias personales
+3. Mejora la estructura y coherencia narrativa
+4. Corrige errores gramaticales y de redacción
+5. Enriquece el texto según las instrucciones sin alterar los hechos
+6. Mantén un tono auténtico y personal
+7. Asegúrate de que la respuesta siga respondiendo a la pregunta original
+
+CONSIDERACIONES:
+- Si se pide expandir: Desarrolla más los detalles y contexto
+- Si se pide resumir: Mantén los puntos más importantes y significativos
+- Si se pide clarificar: Mejora la estructura sin cambiar el contenido
+- Si se pide más emoción: Enriquece la expresión emocional existente
+`;
+
+  const userPrompt = `
+PREGUNTA ORIGINAL:
+${question}
+
+TEXTO ACTUAL:
+${currentText}
+
+INSTRUCCIONES DE MEJORA:
+${instructions}
+
+Por favor, mejora el texto siguiendo las instrucciones proporcionadas, manteniendo la autenticidad y el valor personal de la historia.
+`;
+
+  try {
+    const completion = await openai.chat.completions.create({
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      model: "gpt-4o",
+      temperature: 0.7,
+      max_tokens: 1000
+    });
+
+    return completion.choices[0]?.message?.content || currentText;
+  } catch (error) {
+    console.error('Error al mejorar el texto:', error);
+    return currentText;
+  }
+}
+
