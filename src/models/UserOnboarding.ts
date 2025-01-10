@@ -39,6 +39,7 @@ interface IUserOnboarding extends Document {
       mails: string[];
       active: boolean;
     }
+    biographyInfo: string;
     isGift: boolean;
   }>;
   status: 'pending' | 'active' | 'paused' | 'completed';
@@ -159,6 +160,10 @@ const userOnboardingSchema = new Schema<IUserOnboarding>({
         type: Boolean,
         default: true,
       }
+    },
+    biographyInfo: {
+      type: String,
+      default: '',
     },
     isGift: {
       type: Boolean,

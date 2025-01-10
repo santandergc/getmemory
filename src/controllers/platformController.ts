@@ -6,12 +6,24 @@ import UserQuestion from '../models/UserQuestion';
 import { ObjectId } from 'mongoose';
 import TemplateQuestion from '../models/TemplateQuestion';
 import { sendTemplateMessageOnboardingGift, sendTemplateMessageOnboardingPersonal, sendTemplateMessageReminder } from '../services/whatsappService';
+import { generateChapters, generateQuestions } from '../services/openAIQuestionService';
 
 interface OnboardingRequest extends Request {
   user?: any;
 }
 
 export const platformController = {
+  async handleUserInfo(req: OnboardingRequest, res: Response) {
+    try {
+      const userId = req.params.userId;
+      const user = await UserQuestion.findById(userId);
+      res.status(200).json(user);
+    } catch (error) {
+      console.error('Error getting user info:', error);
+      res.status(500).json({ error: 'Error al obtener la información del usuario' });
+    }
+  },
+
   async handleInfo(req: OnboardingRequest, res: Response) {
     try {
       const { 
@@ -59,6 +71,7 @@ export const platformController = {
             active: true,
             mails: []
           },
+          biographyInfo: '',
           isGift: true
         });
       }
@@ -192,7 +205,8 @@ export const platformController = {
             totalChapters: userQuestion.questions.length,
             completedChapters: userQuestion.questions.filter(q => q.isCompleted).length,
             idFirstQuestion: userQuestion.questions[0]._id,
-            started: userQuestion.started
+            started: userQuestion.started,
+            chapterStarted: userQuestion.onboarding.chapterStarted
           };
         })
       );
@@ -273,6 +287,16 @@ export const platformController = {
     }
   },
 
+  async handleQuestionsTemplates(req: OnboardingRequest, res: Response) {
+    try {
+      const templateQuestions = await TemplateQuestion.find();
+      res.status(200).json(templateQuestions);
+    } catch (error) {
+      console.error('Error getting questions templates:', error);
+      res.status(500).json({ error: 'Error al obtener las preguntas' });
+    }
+  },
+
   async handleQuestionsById(req: OnboardingRequest, res: Response) {
     try {
       const userId = req.params.userId;
@@ -347,6 +371,7 @@ export const platformController = {
       }
 
       userQuestion.questions = updatedQuestions;
+      userQuestion.onboarding.chapterStarted = true;
       await userQuestion.save();
       
       res.status(200).json({ message: 'Preguntas actualizadas exitosamente' });
@@ -442,4 +467,112 @@ export const platformController = {
       res.status(500).json({ error: 'Error al crear la configuración' });
     }
   },
+
+  async handleBiographyInfo(req: OnboardingRequest, res: Response) {
+    try {
+      const userId = req.user._id;
+      const user = await UserOnboarding.findById(userId);
+      const id = Number(req.params.id);
+      const { biographyInfo } = req.body;
+      if (!user) {
+        return res.status(404).json({ error: 'Usuario no encontrado' });
+      }
+      const templateQuestions = await TemplateQuestion.findOne({ name: 'Life Questions Template' });
+      const questions = templateQuestions?.questions || [];
+      user.users[id].state.questions = true;
+      user.users[id].biographyInfo = biographyInfo;
+      user.users[id].questions = questions;
+      await user.save();
+      res.status(200).json({ message: 'Información de la biografía actualizada exitosamente' });
+    } catch (error) {
+      console.error('Error creating configuration:', error);
+      res.status(500).json({ error: 'Error al crear la configuración' });
+    }
+  },
+
+  async handleGenerateChapters(req: OnboardingRequest, res: Response) {
+    try {
+      const { milestones } = req.body;
+
+      // Validar que se recibió el milestone
+      if (!milestones) {
+        const templateQuestions = await TemplateQuestion.findOne({ name: 'Life Questions Template' });
+        const questions = templateQuestions?.questions || [];
+        return res.status(200).json(questions);
+      }
+
+      // Llamar a OpenAI para generar capítulos y preguntas
+      const chaptersResponse = await generateChapters(milestones);
+      
+      try {
+        // Parsear la respuesta JSON
+        const parsedResponse = JSON.parse(chaptersResponse) as { chapters: Record<string, string[]> };
+        
+        // Validar que la respuesta tenga el formato esperado
+        if (!parsedResponse.chapters) {
+          throw new Error('Formato de respuesta inválido');
+        }
+
+        // Transformar la estructura en el formato requerido
+        let questionId = 1;
+        const questions = [];
+
+        // Iterar sobre cada capítulo y sus preguntas
+        for (const [chapter, chapterQuestions] of Object.entries(parsedResponse.chapters)) {
+          for (const question of chapterQuestions) {
+            questions.push({
+              questionId,
+              text: question,
+              minWords: 300,
+              chapter,
+              completed: false
+            });
+            questionId++;
+          }
+        }
+
+        // Devolver el array de preguntas formateado
+        res.status(200).json(questions);
+
+      } catch (parseError) {
+        console.error('Error parsing chapters response:', parseError);
+        res.status(500).json({ error: 'Error al procesar la respuesta de los capítulos' });
+      }
+
+    } catch (error) {
+      console.error('Error generating chapters:', error);
+      res.status(500).json({ error: 'Error al generar los capítulos' });
+    }
+  },
+
+  async handleGenerateQuestions(req: OnboardingRequest, res: Response) {
+    try {
+      const { chapter, instructions, startQuestionId, chapterQuestions } = req.body;
+
+      if (!chapter) {
+        return res.status(400).json({ error: 'Se requiere especificar el capítulo' });
+      }
+
+      // Obtener las preguntas de OpenAI, pasando las preguntas actuales como contexto
+      const questionsArray = await generateQuestions(
+        chapter, 
+        instructions || '', 
+        chapterQuestions || []
+      );
+      
+      // Transformar el array de strings en el formato requerido
+      const questions = questionsArray.map((questionText, index) => ({
+        questionId: (startQuestionId || 1) + index,
+        text: questionText,
+        minWords: 300,
+        chapter: chapter,
+        completed: false
+      }));
+
+      res.status(200).json(questions);
+    } catch (error) {
+      console.error('Error generating questions:', error);
+      res.status(500).json({ error: 'Error al generar las preguntas' });
+    }
+  }
 };

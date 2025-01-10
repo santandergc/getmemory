@@ -35,6 +35,7 @@ interface IUser extends Document {
   country: string; // País del usuario
   onboarding: {
     history: IConversationMessage[];
+    chapterStarted: boolean;
   };
   reminder: {
     time: string; // Hora de envío (formato 'HH:mm', ej. '08:00')
@@ -44,6 +45,7 @@ interface IUser extends Document {
     mails: string[]; // Lista de correos electrónicos a los que se enviarán los mensajes
   };
   questions: IUserQuestion[]; // Lista de preguntas asociadas al usuario
+  biographyInfo?: string;
   started: boolean; // Si el usuario ha iniciado la aplicación
   isGift: boolean; // Si el usuario es un regalo
   createdAt: Date; // Fecha de creación del usuario
@@ -170,6 +172,10 @@ const userSchema = new Schema<IUser>(
         type: [conversationMessageSchema],
         default: [],
       },
+      chapterStarted: {
+        type: Boolean,
+        default: false,
+      },
     },
     reminder: {
       time: { 
@@ -196,6 +202,10 @@ const userSchema = new Schema<IUser>(
     questions: {
       type: [userQuestionSchema],
       default: [],
+    },
+    biographyInfo: {
+      type: String,
+      default: '',
     },
     started: {
       type: Boolean,

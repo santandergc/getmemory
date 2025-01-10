@@ -66,8 +66,20 @@ const determineResponseType = async (message: string, history: string[]): Promis
 }> => {
   const random = Math.random();
   const useEmoji = Math.random() < 0.5;
+  const wordCount = message.split(' ').length;
   
-  // Si inicialmente sería solo_pregunta, verificamos si necesita empatía
+  // Si el mensaje tiene más de 70 palabras, no puede ser solo_pregunta
+  if (wordCount > 70) {
+    if (random < 0.4) {
+      return { type: 'texto_pregunta', maxTokens: 100, maxWords: 20, useEmoji };
+    } else if (random < 0.7) {
+      return { type: 'frase_pregunta', maxTokens: 150, maxWords: 30, useEmoji };
+    } else {
+      return { type: 'dos_parrafos', maxTokens: 200, maxWords: 40, useEmoji };
+    }
+  }
+  
+  // Para mensajes de 70 palabras o menos
   if (random < 0.2) {
     const needsEmpathy = await analyzeNeedForEmpathy(message, history);
     if (needsEmpathy) {
@@ -793,8 +805,7 @@ Outgoing es el asistente que está respondiendo.
 
 ### Formato de Salida:
 El texto debe estar organizado en párrafos claros, escrito en un lenguaje personal y natural, sin que parezca un resumen ni una interpretación externa.
-
-  `;
+`;
 
   const completion = await openai.chat.completions.create({
     messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
@@ -805,4 +816,160 @@ El texto debe estar organizado en párrafos claros, escrito en un lenguaje perso
 
   return completion.choices[0]?.message?.content || '';
 };
+
+export const generateChapters = async (milestone: string): Promise<string> => {
+  const systemPrompt = `
+Eres un experto biógrafo especializado en crear historias de vida significativas y profundas. Tu tarea es generar capítulos y preguntas para una biografía basada en los hitos de vida proporcionados.
+
+REGLAS IMPORTANTES:
+1. Genera entre 3-10 capítulos que abarquen toda la vida de la persona
+2. Genera entre 35-45 preguntas en total (distribuyelas entre los capítulos que creaste)
+3. Si el milestone es vago o incompleto, complementa con capítulos básicos (infancia, juventud, etc.)
+4. Enfatiza en los hitos mencionados pero asegura una cobertura completa de la vida
+5. Las preguntas deben ser profundas y significativas
+
+Si no comentado sobre la infancia, agrega un capitulo: Infancia y orígenes. y las siguientes preguntas:
+1. ¿Dónde naciste y cómo era el lugar donde creciste?
+2. ¿Qué recuerdos tienes de tus padres o cuidadores y de cómo te criaron?
+3. ¿Tienes hermanos? ¿Cómo era tu relación con ellos?
+4. ¿Cómo era tu infancia y qué cosas te hacían feliz en esos años?
+5. ¿Quiénes fueron tus primeros amigos y que recuerdas de ellos?
+
+Agrega como último sobre legado (si es que no se menciona algo simular) y agrega las siguientes preguntas:
+1. ¿Qué decisiones han definido tu vida y qué harías diferente si pudieras?
+2. ¿Qué legado quisieras dejar a las personas que amas o al mundo?
+3. ¿Cómo te ves hoy en comparación con la persona que soñabas ser?
+4. ¿Qué mensaje le darías a tu yo más joven si pudieras hablar con él?
+5. ¿Qué consejo quisieras darle a alguien que se enfrenta a los mismos retos que tú viviste?
+
+FORMATO DE SALIDA REQUERIDO (JSON):
+{
+  "chapters": {
+    "nombre_del_capitulo1": ["pregunta1", "pregunta2", "pregunta3", "pregunta4", "pregunta5", "pregunta6", "pregunta7"],
+    "nombre_del_capitulo2": ["pregunta1", "pregunta2", "pregunta3"],
+    "nombre_del_capitulo3": ["pregunta1", "pregunta2", "pregunta3", "pregunta4", "pregunta5"],
+    "nombre_del_capitulo4": ["pregunta1", "pregunta2", "pregunta3", "pregunta4", "pregunta5", "pregunta6"],
+    ...
+  }
+}
+`;
+
+  const userPrompt = `
+Hitos de vida proporcionados:
+${milestone}
+
+INSTRUCCIONES:
+1. Analiza el milestone proporcionado
+2. Identifica los temas principales y complementa con capítulos básicos de una biografía
+3. Genera preguntas profundas y significativas para cada capítulo
+4. Las preguntas deben promover respuestas detalladas y reflexivas
+5. Mantén el formato JSON especificado con capítulos como claves y arrays de preguntas como valores
+
+CLAVE: considera que te van a dar hitos de su vida, pero no son todos. Normalmente cubrirán epocas de su vida, pero no todas las epocas. Intuye las epocas que faltan y agrega los capítulos necesarios.
+
+IMPORTANTE: La respuesta DEBE estar en el formato JSON especificado.
+`;
+
+  try {
+    const completion = await openai.chat.completions.create({
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      model: "gpt-4o",
+      temperature: 0.7,
+      max_tokens: 2500,
+      response_format: { type: "json_object" }
+    });
+
+    return completion.choices[0]?.message?.content || '{"chapters": {}}';
+  } catch (error) {
+    console.error('Error al generar capítulos:', error);
+    return '{"chapters": {}}';
+  }
+};
+
+
+export const generateQuestions = async (
+  chapter: string, 
+  instructions: string,
+  existingQuestions: string[] = []
+): Promise<string[]> => {
+  const systemPrompt = `
+Eres un experto biógrafo especializado en crear preguntas significativas y profundas para historias de vida. Tu tarea es generar preguntas específicas para un capítulo de una biografía, considerando el contexto y las instrucciones proporcionadas.
+
+REGLAS IMPORTANTES:
+1. Genera entre 4-6 preguntas por capítulo (o según lo especificado en las instrucciones)
+2. Las preguntas deben ser profundas y significativas
+3. Adapta las preguntas al contexto del capítulo
+4. Evita preguntas genéricas o superficiales
+5. Las preguntas deben promover respuestas detalladas y reflexivas
+6. Equilibra las preguntas específicas y generales:
+   - Si las instrucciones son específicas (ej: "primer trabajo"), incluye esas preguntas pero no te limites solo a ellas
+   - Genera preguntas adicionales que cubran otros aspectos relevantes del período/capítulo
+   - Mantén una proporción de ~30% preguntas específicas y ~70% preguntas generales del capítulo
+   - Asegúrate que las preguntas formen una narrativa coherente y completa del período
+   - Evita enfocarte exclusivamente en un solo aspecto aunque las instrucciones sean muy específicas
+7. IMPORTANTE - Manejo de preguntas existentes:
+   - Mantén las preguntas existentes que sean relevantes
+   - Complementa con nuevas preguntas que se alineen con las instrucciones
+   - Asegúrate de que las nuevas preguntas no sean redundantes con las existentes
+   - Si una pregunta existente no es relevante para el nuevo enfoque, puedes omitirla
+8. Chequea la intención del usuario, si es que quiere agregar más preguntas preguntas sobre las que ya existen, o si quiere sobre escribir las que ya existen.
+
+Obligatorio: Preguntas de máximo 10 palabras. 
+
+FORMATO DE SALIDA REQUERIDO (JSON):
+{
+  "questions": [
+    "pregunta 1",
+    "pregunta 2",
+    "pregunta 3",
+    ...
+  ]
+}
+`;
+
+  const userPrompt = `
+Capítulo: "${chapter}"
+Instrucciones adicionales: "${instructions}"
+
+Preguntas existentes:
+${existingQuestions.length > 0 
+  ? existingQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n')
+  : 'No hay preguntas existentes.'}
+
+INSTRUCCIONES:
+1. Analiza el capítulo y las instrucciones proporcionadas
+2. Revisa las preguntas existentes y mantenlas si son relevantes
+3. Genera preguntas adicionales que complementen las existentes y cubran las nuevas instrucciones
+4. Asegúrate de que las preguntas promuevan respuestas narrativas y detalladas
+5. Adapta el tono y la profundidad según el contexto del capítulo
+
+IMPORTANTE: 
+- La respuesta debe estar en formato JSON con un array de strings en la propiedad "questions"
+- Incluye tanto las preguntas existentes relevantes como las nuevas preguntas generadas
+- El orden de las preguntas debe mantener una narrativa coherente
+`;
+
+  try {
+    const completion = await openai.chat.completions.create({
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      model: "gpt-4o",
+      temperature: 0.7,
+      max_tokens: 1000,
+      response_format: { type: "json_object" }
+    });
+
+    const response = JSON.parse(completion.choices[0]?.message?.content || '{"questions": []}');
+    return response.questions || [];
+  } catch (error) {
+    console.error('Error al generar preguntas:', error);
+    return [];
+  }
+};
+
 

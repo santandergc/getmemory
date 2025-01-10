@@ -35,6 +35,10 @@ router.get('/auth/validate',
   }
 );
 
+router.get('/user/:userId', authMiddleware.validateToken, async (req: express.Request, res: express.Response) => {
+  await platformController.handleUserInfo(req, res);
+});
+
 router.post('/info', authMiddleware.validateToken, async (req: express.Request, res: express.Response) => {
   await platformController.handleInfo(req, res);
 });
@@ -62,6 +66,10 @@ router.post('/biographies/:id/reminder', authMiddleware.validateToken, async (re
   await platformController.handleReminderBiography(req, res);
 });
 
+router.get('/questions/templates', authMiddleware.validateToken, async (req: express.Request, res: express.Response) => {
+  await platformController.handleQuestionsTemplates(req, res);
+});
+
 
 // Ruta para obtener todas las preguntas disponibles
 router.get('/questions/default/:userId', authMiddleware.validateToken, async (req: express.Request, res: express.Response) => {
@@ -77,6 +85,15 @@ router.post('/questions/user/:userId', authMiddleware.validateToken, async (req:
   await platformController.handleUpdateQuestions(req, res);
 });
 
+router.post('/questions/generate-chapters', authMiddleware.validateToken, async (req: express.Request, res: express.Response) => {
+  await platformController.handleGenerateChapters(req, res);
+});
+
+router.post('/questions/generate-questions', authMiddleware.validateToken, async (req: express.Request, res: express.Response) => {
+  await platformController.handleGenerateQuestions(req, res);
+});
+
+
 // Ruta para actualizar una pregunta específica
 router.put('/questions/:userId/:questionId', authMiddleware.validateToken, async (req: express.Request, res: express.Response) => {
   await platformController.handleUpdateQuestion(req, res);
@@ -88,6 +105,10 @@ router.post('/questions/onboarding/:id', authMiddleware.validateToken, async (re
 
 router.post('/reminder/onboarding/:id', authMiddleware.validateToken, async (req: express.Request, res: express.Response) => {
   await platformController.handleReminderOnboarding(req, res);
+});
+
+router.post('/biography-info/:id', authMiddleware.validateToken, async (req: express.Request, res: express.Response) => {
+  await platformController.handleBiographyInfo(req, res);
 });
 
 // Ruta para subir imágenes

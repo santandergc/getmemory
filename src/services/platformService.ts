@@ -34,6 +34,7 @@ export const activateUser = async (user: any, fatherId: ObjectId) => {
       metadata: ''
     })),
     started: false,
+    biographyInfo: user.biographyInfo,
     isGift: user.isGift
    }
 
