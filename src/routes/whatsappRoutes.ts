@@ -21,7 +21,7 @@ router.post('/free-trial', async (req: express.Request, res: express.Response) =
 
 // Rutas de autenticación
 router.post('/auth/google', 
-  authMiddleware.validateFirebaseToken,
+  authMiddleware.validateSupabaseToken,
   async (req: express.Request, res: express.Response) => {
     await authController.handleGoogleAuth(req, res);
   }

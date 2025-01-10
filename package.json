@@ -8,6 +8,7 @@
     "@google-cloud/speech": "^6.7.0",
     "@google-cloud/storage": "^7.14.0",
     "@sendgrid/mail": "^8.1.4",
+    "@supabase/supabase-js": "^2.47.12",
     "@types/express": "^5.0.0",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^22.9.0",

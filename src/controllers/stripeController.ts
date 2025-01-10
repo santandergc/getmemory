@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import Stripe from 'stripe';
 import UserPayment from '../models/UserPayment';
 import UserOnboarding from '../models/UserOnboarding';
-import { sendWelcomeEmail } from '../utils/emailService';
+import { sendPaymentConfirmationEmail } from '../utils/emailService';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2024-12-18.acacia',
@@ -63,7 +63,7 @@ export const stripeController = {
               console.log(`Nuevo UserOnboarding creado: ${session.customer_details?.email}`);
             }
 
-            await sendWelcomeEmail(session.customer_details?.email || '', session.customer_details?.name || '');
+            await sendPaymentConfirmationEmail(session.customer_details?.email || '', session.customer_details?.name || '');
           } catch (error) {
             console.error(`Error procesando pago: ${error}`);
           }

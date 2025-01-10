@@ -9,33 +9,31 @@ interface AuthRequest extends Request {
 export const authController = {
   async handleGoogleAuth(req: AuthRequest, res: Response) {
     try {
-      const { email, displayName, photoURL, firebaseId } = req.body;
-      const googleUser = req.user; // Info validada del token de Google
+      const supabaseUser = req.user;
 
       let user = await UserOnboarding.findOne({ 
-        $or: [
-          { firebaseId },
-          { email: googleUser.email }
-        ]
+        email: supabaseUser.email 
       });
 
       if (!user) {
         try {
           user = await UserOnboarding.create({
-            firebaseId,
-            email: googleUser.email,
-            displayName: displayName || googleUser.name,
-            photoURL: photoURL || googleUser.picture,
+            email: supabaseUser.email,
+            displayName: supabaseUser.user_metadata?.full_name,
+            photoURL: supabaseUser.user_metadata?.avatar_url,
+            provider: supabaseUser.user_metadata?.provider,
+            supabaseId: supabaseUser.id,
             status: 'pending',
           });
         } catch (error: any) {
           if (error.code === 11000) {
-            user = await UserOnboarding.findOne({ firebaseId });
+            user = await UserOnboarding.findOne({ email: supabaseUser.email });
             if (user) {
               user.lastLogin = new Date();
-              user.displayName = displayName || googleUser.name;
-              user.photoURL = photoURL || googleUser.picture;
-              user.email = googleUser.email;
+              user.displayName = supabaseUser.user_metadata?.full_name || user.displayName;
+              user.photoURL = supabaseUser.user_metadata?.avatar_url || user.photoURL;
+              user.provider = supabaseUser.user_metadata?.provider;
+              user.supabaseId = supabaseUser.id;
               await user.save();
             } else {
               throw error;
@@ -47,23 +45,24 @@ export const authController = {
       }
 
       user.lastLogin = new Date();
-      user.displayName = displayName || googleUser.name;
-      user.photoURL = photoURL || googleUser.picture;
-      user.firebaseId = firebaseId;
-      user.email = googleUser.email;
+      user.displayName = supabaseUser.user_metadata?.full_name || user.displayName;
+      user.photoURL = supabaseUser.user_metadata?.avatar_url || user.photoURL;
+      user.provider = supabaseUser.user_metadata?.provider;
+      user.supabaseId = supabaseUser.id;
       await user.save();
 
-
-
-      
+      const jwtSecret = process.env.JWT_SECRET;
+      if (!jwtSecret) {
+        throw new Error('JWT_SECRET no está configurado');
+      }
 
       const token = jwt.sign(
         { 
           userId: user._id,
           email: user.email,
-          firebaseId: user.firebaseId
+          sub: supabaseUser.id
         },
-        process.env.JWT_SECRET || 'your-secret-key',
+        jwtSecret,
         { expiresIn: '24h' }
       );
 
@@ -73,6 +72,7 @@ export const authController = {
           email: user.email,
           displayName: user.displayName,
           photoURL: user.photoURL,
+          provider: user.provider,
           createdAt: user.createdAt,
           updatedAt: user.updatedAt
         },
@@ -87,7 +87,7 @@ export const authController = {
 
   async validateToken(req: AuthRequest, res: Response) {
     try {
-      const user = req.user; // Usuario ya validado por el middleware
+      const user = req.user;
 
       res.status(200).json({
         user: {
@@ -95,6 +95,7 @@ export const authController = {
           email: user.email,
           displayName: user.displayName,
           photoURL: user.photoURL,
+          provider: user.provider,
           createdAt: user.createdAt,
           updatedAt: user.updatedAt
         }

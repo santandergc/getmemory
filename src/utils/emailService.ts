@@ -2,62 +2,140 @@ import sgMail from '@sendgrid/mail';
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY || '');
 
-const getWelcomeTemplate = (userName: string): string => {
+const getPaymentConfirmationTemplate = (userName: string): string => {
   return `
     <!DOCTYPE html>
     <html>
     <head>
-      <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background-color: #6366f1; color: white; padding: 20px; text-align: center; border-radius: 8px; }
-        .content { padding: 20px; background-color: #f9fafb; border-radius: 8px; margin-top: 20px; }
-        .button { background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 20px; }
-        .footer { text-align: center; margin-top: 20px; color: #6b7280; font-size: 0.9em; }
-      </style>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+                background-color: #f9f9f9;
+                color: #333333;
+            }
+            .container {
+                max-width: 600px;
+                margin: 50px auto;
+                background: #ffffff;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                overflow: hidden;
+            }
+            .header {
+                background-color: #606c3e;
+                color: #ffffff;
+                text-align: center;
+                padding: 20px;
+            }
+            .header h1 {
+                margin: 0;
+                font-size: 24px;
+            }
+            .content {
+                padding: 20px;
+            }
+            .content h2 {
+                color: #606c3e;
+                font-size: 20px;
+            }
+            .content p {
+                line-height: 1.6;
+                margin: 15px 0;
+            }
+            .button-container {
+                text-align: center;
+                margin-top: 30px;
+            }
+            .button {
+                text-decoration: none;
+                background-color: #606c3e;
+                color: #ffffff;
+                padding: 15px 20px;
+                font-size: 16px;
+                border-radius: 5px;
+                display: inline-block;
+            }
+            .button:hover {
+                background-color: #4e582f;
+            }
+            .steps {
+                background-color: #f8f9fa;
+                padding: 20px;
+                border-radius: 5px;
+                margin: 20px 0;
+            }
+            .steps ol {
+                margin: 0;
+                padding-left: 20px;
+            }
+            .steps li {
+                margin-bottom: 10px;
+            }
+            .footer {
+                background-color: #f1f1f1;
+                color: #777777;
+                text-align: center;
+                padding: 10px;
+                font-size: 14px;
+            }
+        </style>
     </head>
     <body>
-      <div class="container">
-        <div class="header">
-          <h1>¡Bienvenido a Memori! 🎉</h1>
+        <div class="container">
+            <div class="header">
+                <h1>¡Gracias por tu compra en Memori!</h1>
+            </div>
+
+            <div class="content">
+                <h2>Hola ${userName},</h2>
+                <p>¡Tu pago ha sido procesado exitosamente! Estamos emocionados de que hayas decidido preservar tus memorias más valiosas con nosotros.</p>
+
+                <div class="steps">
+                    <h3>Próximos pasos:</h3>
+                    <ol>
+                        <li>Crea tu cuenta en Memori utilizando este mismo correo electrónico (${userName})</li>
+                        <li>Accede a nuestra plataforma</li>
+                        <li>Comienza a crear y preservar tus memorias</li>
+                    </ol>
+                </div>
+
+                <p>Para comenzar tu experiencia en Memori, haz clic en el siguiente botón:</p>
+
+                <div class="button-container">
+                    <a href="https://app.getmemori.org" class="button">Comenzar ahora</a>
+                </div>
+
+                <p>Si tienes alguna pregunta o necesitas ayuda, no dudes en contactarnos. Estamos aquí para apoyarte en este hermoso viaje de preservar tus recuerdos.</p>
+            </div>
+
+            <div class="footer">
+                <p>¿Necesitas ayuda? Escríbenos a <a href="mailto:cristobal@getmemori.org">cristobal@getmemori.org</a></p>
+                <p>© ${new Date().getFullYear()} Memori. Todos los derechos reservados.</p>
+            </div>
         </div>
-        <div class="content">
-          <h2>Hola ${userName},</h2>
-          <p>¡Nos alegra mucho tenerte con nosotros! Tu cuenta ha sido creada exitosamente.</p>
-          <p>Recuerda que debes ingresar a la plataforma con este mismo correo.</p>
-          <p>Ahora podrás acceder a Memori utilizando tu cuenta de Google para:</p>
-          <ul>
-            <li>Crear y guardar tus memorias más preciadas</li>
-            <li>Compartir historias con tus seres queridos</li>
-            <li>Preservar momentos especiales para siempre</li>
-          </ul>
-          <center>
-            <a href="https://app.getmemori.org" class="button" style="color: white; background-color: #4CAF50; font-weight: bold;">Comenzar ahora</a>
-          </center>
-        </div>
-        <div class="footer">
-          <p>© ${new Date().getFullYear()} Memori. Todos los derechos reservados.</p>
-        </div>
-      </div>
     </body>
     </html>
   `;
 };
 
-export const sendWelcomeEmail = async (to: string, userName: string): Promise<void> => {
+export const sendPaymentConfirmationEmail = async (to: string, userName: string): Promise<void> => {
   const msg = {
     to,
     from: process.env.SENDGRID_FROM_EMAIL || '',
-    subject: '¡Bienvenido a Memori! 🎉',
-    text: `¡Hola ${userName}! Bienvenido a Memori. Tu cuenta ha sido creada exitosamente.`,
-    html: getWelcomeTemplate(userName)
+    subject: '¡Gracias por tu compra en Memori! 🎉',
+    text: `¡Hola ${userName}! Tu pago ha sido confirmado. Por favor, crea tu cuenta en Memori usando este correo electrónico para comenzar.`,
+    html: getPaymentConfirmationTemplate(userName)
   };
 
   try {
     await sgMail.send(msg);
-    console.log('Correo de bienvenida enviado exitosamente');
+    console.log('Correo de confirmación de pago enviado exitosamente');
   } catch (error) {
-    console.error('Error enviando el correo de bienvenida:', error);
-    throw new Error('Error al enviar el correo de bienvenida');
+    console.error('Error enviando el correo de confirmación de pago:', error);
+    throw new Error('Error al enviar el correo de confirmación de pago');
   }
-}; 
+};

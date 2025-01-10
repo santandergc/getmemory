@@ -1,12 +1,13 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 interface IUserOnboarding extends Document {
-  firebaseId: string;              // ID único de Firebase
-  email: string;                   // Email del usuario autenticado con Firebase
-  displayName: string | null;      // Nombre mostrado de Google
-  photoURL: string | null;         // URL de la foto de perfil de Google
-  primaryPhone: string;            // Número de WhatsApp del usuario final
-  availableUsers: number;          // Cantidad de usuarios disponibles sin onboarding
+  supabaseId: string;             // ID único de Supabase
+  email: string;                  // Email del usuario
+  displayName: string | null;     // Nombre mostrado
+  photoURL: string | null;        // URL de la foto de perfil
+  provider: string;               // Proveedor de autenticación (google, etc)
+  primaryPhone: string;           // Número de WhatsApp del usuario final
+  availableUsers: number;         // Cantidad de usuarios disponibles sin onboarding
   usersIds: [Schema.Types.ObjectId];
   users: Array<{
     completed: boolean;
@@ -49,7 +50,7 @@ interface IUserOnboarding extends Document {
 }
 
 const userOnboardingSchema = new Schema<IUserOnboarding>({
-  firebaseId: {
+  supabaseId: {
     type: String,
     sparse: true,
     unique: true,
@@ -67,6 +68,10 @@ const userOnboardingSchema = new Schema<IUserOnboarding>({
   photoURL: {
     type: String,
     default: null,
+  },
+  provider: {
+    type: String,
+    required: true,
   },
   usersIds: [{
     type: Schema.Types.ObjectId,
@@ -184,10 +189,9 @@ const userOnboardingSchema = new Schema<IUserOnboarding>({
 });
 
 // Índices
-userOnboardingSchema.index({ firebaseId: 1 });
+userOnboardingSchema.index({ supabaseId: 1 });
 userOnboardingSchema.index({ email: 1 });
 userOnboardingSchema.index({ primaryPhone: 1 });
-userOnboardingSchema.index({ 'trackingPhones.phoneNumber': 1 });
 
 // Middleware para actualizar lastLogin
 userOnboardingSchema.pre('save', function(next) {
