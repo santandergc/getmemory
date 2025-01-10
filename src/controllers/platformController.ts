@@ -580,6 +580,7 @@ export const platformController = {
     try {
       const { currentText, instructions, question } = req.body;
       const result = await generateTextResult(currentText, instructions, question);
+      res.status(200).json(result);
     } catch (error) {
       console.error('Error generating text result:', error);
       res.status(500).json({ error: 'Error al generar el texto' });
