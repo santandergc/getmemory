@@ -87,7 +87,7 @@ const getPaymentConfirmationTemplate = (userName: string): string => {
     <body>
         <div class="container">
             <div class="header">
-                <h1>¡Gracias por tu compra en Memori!</h1>
+                <h1>¡Gracias por unirte a Memori!</h1>
             </div>
 
             <div class="content">
@@ -126,7 +126,7 @@ export const sendPaymentConfirmationEmail = async (to: string, userName: string)
   const msg = {
     to,
     from: process.env.SENDGRID_FROM_EMAIL || '',
-    subject: '¡Gracias por tu compra en Memori! 🎉',
+    subject: '¡Te damos la bienvenida a Memori! 🎉',
     text: `¡Hola ${userName}! Tu pago ha sido confirmado. Por favor, crea tu cuenta en Memori usando este correo electrónico para comenzar.`,
     html: getPaymentConfirmationTemplate(userName)
   };
