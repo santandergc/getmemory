@@ -53,7 +53,7 @@ const getPaymentConfirmationTemplate = (userName: string): string => {
             .button {
                 text-decoration: none;
                 background-color: #606c3e;
-                color: #ffffff;
+                color: #ffffff !important;
                 padding: 15px 20px;
                 font-size: 16px;
                 border-radius: 5px;
