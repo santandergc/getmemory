@@ -823,7 +823,7 @@ Eres un experto biógrafo especializado en crear historias de vida significativa
 
 REGLAS IMPORTANTES:
 1. Genera entre 3-10 capítulos que abarquen toda la vida de la persona
-2. Genera entre 35-45 preguntas en total (distribuyelas entre los capítulos que creaste)
+2. Genera CÓMO MÍNIMO 35-45 preguntas en total (distribuyelas entre los capítulos que creaste). Indispensable.
 3. Si el milestone es vago o incompleto, complementa con capítulos básicos (infancia, juventud, etc.)
 4. Enfatiza en los hitos mencionados pero asegura una cobertura completa de la vida
 5. Las preguntas deben ser profundas y significativas
