@@ -45,7 +45,7 @@ export const authMiddleware = {
   },
 
   validateSupabaseToken: async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-    const { email, name, avatar_url, provider, supabase_uid } = req.body;
+    const { email, name, avatar_url, supabase_uid } = req.body;
 
     if (!email || !supabase_uid) {
       res.status(401).json({ error: 'Datos de usuario incompletos' });
@@ -59,7 +59,6 @@ export const authMiddleware = {
       user_metadata: {
         full_name: name,
         avatar_url,
-        provider
       }
     };
     next();

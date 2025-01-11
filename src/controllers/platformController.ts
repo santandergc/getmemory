@@ -46,6 +46,9 @@ export const platformController = {
         return res.status(404).json({ error: 'Usuario no encontrado' });
       }
 
+      const existingPhone = await UserQuestion.findOne({ whatsappNumber: phone });
+      if (existingPhone) return res.status(200).json({ success: false });
+
       // Asegurarse de que el array users tenga el índice necesario
       while (user.users.length <= id) {
         user.users.push({

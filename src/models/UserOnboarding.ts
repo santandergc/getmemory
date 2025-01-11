@@ -5,7 +5,6 @@ interface IUserOnboarding extends Document {
   email: string;                  // Email del usuario
   displayName: string | null;     // Nombre mostrado
   photoURL: string | null;        // URL de la foto de perfil
-  provider: string;               // Proveedor de autenticación (google, etc)
   primaryPhone: string;           // Número de WhatsApp del usuario final
   availableUsers: number;         // Cantidad de usuarios disponibles sin onboarding
   usersIds: [Schema.Types.ObjectId];
@@ -68,10 +67,6 @@ const userOnboardingSchema = new Schema<IUserOnboarding>({
   photoURL: {
     type: String,
     default: null,
-  },
-  provider: {
-    type: String,
-    required: true,
   },
   usersIds: [{
     type: Schema.Types.ObjectId,

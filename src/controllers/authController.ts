@@ -21,7 +21,6 @@ export const authController = {
             email: supabaseUser.email,
             displayName: supabaseUser.user_metadata?.full_name,
             photoURL: supabaseUser.user_metadata?.avatar_url,
-            provider: supabaseUser.user_metadata?.provider,
             supabaseId: supabaseUser.id,
             status: 'pending',
           });
@@ -32,7 +31,6 @@ export const authController = {
               user.lastLogin = new Date();
               user.displayName = supabaseUser.user_metadata?.full_name || user.displayName;
               user.photoURL = supabaseUser.user_metadata?.avatar_url || user.photoURL;
-              user.provider = supabaseUser.user_metadata?.provider;
               user.supabaseId = supabaseUser.id;
               await user.save();
             } else {
@@ -47,7 +45,6 @@ export const authController = {
       user.lastLogin = new Date();
       user.displayName = supabaseUser.user_metadata?.full_name || user.displayName;
       user.photoURL = supabaseUser.user_metadata?.avatar_url || user.photoURL;
-      user.provider = supabaseUser.user_metadata?.provider;
       user.supabaseId = supabaseUser.id;
       await user.save();
 
@@ -72,7 +69,6 @@ export const authController = {
           email: user.email,
           displayName: user.displayName,
           photoURL: user.photoURL,
-          provider: user.provider,
           createdAt: user.createdAt,
           updatedAt: user.updatedAt
         },
@@ -95,7 +91,6 @@ export const authController = {
           email: user.email,
           displayName: user.displayName,
           photoURL: user.photoURL,
-          provider: user.provider,
           createdAt: user.createdAt,
           updatedAt: user.updatedAt
         }
