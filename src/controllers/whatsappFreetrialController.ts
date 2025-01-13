@@ -162,7 +162,7 @@ export async function handleIncomingMessageFreeTrial(req: Request, res: Response
         await new Promise(resolve => setTimeout(resolve, 1000)); 
         await sendWhatsAppMessage(
           user.whatsappNumber,
-          'https://getmemori.org/biography',
+          'https://app.getmemori.org/biography',
           NUMBER
         );
         await new Promise(resolve => setTimeout(resolve, 7000)); 
