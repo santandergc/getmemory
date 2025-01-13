@@ -52,10 +52,15 @@ export async function handleIncomingMessageFreeTrial(req: Request, res: Response
       if (!user) {
         user = await FreetrialService.createUser(whatsappNumber);
         await sendWhatsAppMessage(whatsappNumber, '¡Hola! Soy Sofía de memori, te doy la bienvenida a tu prueba gratuita. Antes de empezar, te invito a que veas este video', NUMBER);
-        await sendWhatsAppVideo(user.whatsappNumber, 'https://drive.google.com/uc?id=13tLL8Np0wRAumw-4Kkld6yJBdsDSpd_M', NUMBER);
+        await sendWhatsAppVideo(user.whatsappNumber, 'https://drive.google.com/uc?id=1ORSeInyGlTY2_fH12TwIy815Avq2LQzS', NUMBER);
         await new Promise(resolve => setTimeout(resolve, 15000)); 
         await sendWhatsAppMessage(user.whatsappNumber, 'Dicho esto, ¿empezamos?', NUMBER);
         return;
+      }
+
+      if (processedMessage === '/reset') {
+        await UserFreeTrial.deleteOne({ whatsappNumber });
+        return res.status(200).send({ success: true });
       }
 
       user.history.push({
