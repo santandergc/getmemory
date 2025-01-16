@@ -196,7 +196,22 @@ export const platformController = {
         return res.status(404).json({ error: 'Usuario no encontrado' });
       }
 
-      // Obtener los usuarios relacionados con sus preguntas
+      // Si el usuario es cristobal@getmemori.org, obtener todos los usuarios
+      if (user.email === 'cristobal@getmemori.org') {
+        const allUserQuestions = await UserQuestion.find();
+        const allBiographies = allUserQuestions.map(userQuestion => ({
+          id: userQuestion._id,
+          fullName: userQuestion.fullName,
+          totalChapters: userQuestion.questions.length,
+          completedChapters: userQuestion.questions.filter(q => q.isCompleted).length,
+          idFirstQuestion: userQuestion.questions[0]._id,
+          started: userQuestion.started,
+          chapterStarted: userQuestion.onboarding.chapterStarted
+        }));
+        return res.status(200).json(allBiographies);
+      }
+
+      // Para otros usuarios, mantener la lógica original
       const userBiographies = await Promise.all(
         user.usersIds.map(async (id) => {
           const userQuestion = await UserQuestion.findOne({ _id: id });
