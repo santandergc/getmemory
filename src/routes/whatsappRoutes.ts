@@ -5,7 +5,7 @@ import { authController } from '../controllers/authController';
 import { authMiddleware } from '../middleware/auth';
 import { platformController } from '../controllers/platformController';
 import { stripeController } from '../controllers/stripeController';
-import { upload } from '../middleware/uploadMiddleware';
+import { upload, uploadAudio } from '../middleware/uploadMiddleware';
 import { uploadImageToFirebase } from '../services/firebaseStorageService';
 
 const router = express.Router();
@@ -114,6 +114,15 @@ router.post('/reminder/onboarding/:id', authMiddleware.validateToken, async (req
 router.post('/biography-info/:id', authMiddleware.validateToken, async (req: express.Request, res: express.Response) => {
   await platformController.handleBiographyInfo(req, res);
 });
+
+// Ruta para transcribir audio
+router.post('/transcribe',
+  authMiddleware.validateToken,
+  uploadAudio.single('audio'),
+  async (req: express.Request, res: express.Response) => {
+    await platformController.handleTranscribeAudio(req, res);
+  }
+);
 
 // Ruta para subir imágenes
 router.post('/upload-image/:userId/:questionId', 

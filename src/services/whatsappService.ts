@@ -41,6 +41,20 @@ export const sendTemplateMessageNextQuestion = async (to: string, templateName: 
   }
 };
 
+export const sendTemplateSkipQuestion = async (to: string, from?: string) => {
+  try {
+    const message = await client.messages.create({
+      contentSid: 'HX03fa9fdea5fcf42b1135fa857ad1c598',
+      from: `whatsapp:${from || process.env.TWILIO_WHATSAPP_NUMBER}`,
+      to: `whatsapp:${to}`
+    });
+    return message;
+  } catch (error) {
+    console.error('Error enviando el mensaje de plantilla:', error);
+    throw error;
+  }
+};
+
 export const sendTemplateMessageOnboardingGift = async (to: string, user: string, buyer: string, from?: string) => {
   try {
     const message = await client.messages.create({

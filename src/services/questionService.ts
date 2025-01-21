@@ -1,7 +1,7 @@
 import User from '../models/UserQuestion';
 import Question from '../models/Question';
-import { filterGenerateQuestionResponse, generateQuestionMessage, generateQuestionResponse, summarizeConversationHistory, filterOnboardingIntent, generateOnboardingResponse, generateTextFromConversation } from './openAIQuestionService';
-import { sendTemplateMessageNextQuestion, sendWhatsAppAudio, sendWhatsAppMessage, sendWhatsAppVideo } from './whatsappService';
+import { filterGenerateQuestionResponse, generateQuestionMessage, generateQuestionResponse, summarizeConversationHistory, filterOnboardingIntent, generateOnboardingResponse, generateTextFromConversation, filterIntentionNextQuestion, generateFinishDayMessage } from './openAIQuestionService';
+import { sendTemplateMessageNextQuestion, sendTemplateSkipQuestion, sendWhatsAppAudio, sendWhatsAppMessage, sendWhatsAppVideo } from './whatsappService';
 import { addTextToQuestionAI } from './platformService';
 
 export class QuestionService {
@@ -295,6 +295,21 @@ export class QuestionService {
     }
     currentQuestion.wordCount += message.trim().split(/\s+/).length;
   
+    // Obtener intención del LLM
+    const lastFiveMessages = currentQuestion.conversationHistory.slice(-5);
+    const userIntent = await filterIntentionNextQuestion(currentQuestion.text, lastFiveMessages, message);
+    console.log('userIntent', userIntent);
+
+    // Manejar las diferentes intenciones
+    if (userIntent.toLowerCase().includes('next')) {
+      await sendTemplateSkipQuestion(user.whatsappNumber);
+      return '';
+    } else if (userIntent.toLowerCase().includes('finish')) {
+      const response = await generateFinishDayMessage(currentQuestion.text, lastFiveMessages, message);
+      await sendWhatsAppMessage(user.whatsappNumber, response);
+      return '';
+    }
+    
     let sendTemplate = false;
     // Validar si alcanza las 1000 palabras
     if (currentQuestion.wordCount >= (currentQuestion.minWords || 250) && !currentQuestion.isCompleted) {

@@ -14,4 +14,16 @@ export const upload = multer({
       cb(new Error('Solo se permiten imágenes'));
     }
   },
+});
+
+// Configuración específica para archivos de audio
+export const uploadAudio = multer({
+  storage: storage,
+  limits: {
+    fileSize: 25 * 1024 * 1024, // 25MB para archivos de audio
+  },
+  fileFilter: (_req, file, cb) => {
+    // Aceptamos cualquier tipo de archivo, ya que manejaremos el formato en el controlador
+    cb(null, true);
+  },
 }); 

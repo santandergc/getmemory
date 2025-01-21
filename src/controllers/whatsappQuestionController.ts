@@ -45,6 +45,7 @@ export async function handleIncomingMessage(req: Request, res: Response) {
       }
 
       // Retrieve or initialize user
+      console.log('whatsappNumber', whatsappNumber);
       let user = await User.findOne({ whatsappNumber });
       if (!user) {
         user = await QuestionService.initializeUser(whatsappNumber);

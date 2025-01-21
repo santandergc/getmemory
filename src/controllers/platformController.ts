@@ -7,6 +7,7 @@ import { ObjectId } from 'mongoose';
 import TemplateQuestion from '../models/TemplateQuestion';
 import { sendTemplateMessageOnboardingGift, sendTemplateMessageOnboardingPersonal, sendTemplateMessageReminder } from '../services/whatsappService';
 import { generateChapters, generateQuestions, generateTextResult } from '../services/openAIQuestionService';
+import { transcribeFile } from '../services/whisperService';
 
 interface OnboardingRequest extends Request {
   user?: any;
@@ -196,6 +197,19 @@ export const platformController = {
         return res.status(404).json({ error: 'Usuario no encontrado' });
       }
 
+      // Función auxiliar para obtener el último mensaje del usuario
+      const getLastUserMessage = (userQuestion: any) => {
+        const currentQuestion = userQuestion.questions[userQuestion.currentQuestionId];
+        if (!currentQuestion?.conversationHistory?.length) return '';
+        
+        // Filtrar solo mensajes del usuario y obtener el último
+        const userMessages = currentQuestion.conversationHistory
+          .filter((msg: { type: string; timestamp: Date }) => msg.type === 'incoming')
+          .sort((a: { timestamp: Date }, b: { timestamp: Date }) => b.timestamp.getTime() - a.timestamp.getTime());
+        
+        return userMessages.length > 0 ? userMessages[0].timestamp : '';
+      };
+
       // Si el usuario es cristobal@getmemori.org, obtener todos los usuarios
       if (user.email === 'cristobal@getmemori.org') {
         const allUserQuestions = await UserQuestion.find();
@@ -206,7 +220,8 @@ export const platformController = {
           completedChapters: userQuestion.questions.filter(q => q.isCompleted).length,
           idFirstQuestion: userQuestion.questions[0]._id,
           started: userQuestion.started,
-          chapterStarted: userQuestion.onboarding.chapterStarted
+          chapterStarted: userQuestion.onboarding.chapterStarted,
+          lastMessage: getLastUserMessage(userQuestion)
         }));
         return res.status(200).json(allBiographies);
       }
@@ -224,7 +239,8 @@ export const platformController = {
             completedChapters: userQuestion.questions.filter(q => q.isCompleted).length,
             idFirstQuestion: userQuestion.questions[0]._id,
             started: userQuestion.started,
-            chapterStarted: userQuestion.onboarding.chapterStarted
+            chapterStarted: userQuestion.onboarding.chapterStarted,
+            lastMessage: getLastUserMessage(userQuestion)
           };
         })
       );
@@ -603,6 +619,29 @@ export const platformController = {
     } catch (error) {
       console.error('Error generating text result:', error);
       res.status(500).json({ error: 'Error al generar el texto' });
+    }
+  },
+
+  async handleTranscribeAudio(req: Request, res: Response) {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'No se proporcionó ningún archivo de audio' });
+      }
+
+      // Crear un objeto File desde el buffer con el tipo MIME correcto
+      const audioFile = new File(
+        [req.file.buffer],
+        'audio.mp3', // Nombre genérico con extensión
+        { type: 'audio/mpeg' } // Forzamos el tipo MIME a uno que Whisper acepta
+      );
+
+      // Transcribir usando Whisper API
+      const text = await transcribeFile(audioFile);
+
+      res.status(200).json({ text });
+    } catch (error) {
+      console.error('Error al transcribir el archivo:', error);
+      res.status(500).json({ error: 'Error al transcribir el audio' });
     }
   }
 };

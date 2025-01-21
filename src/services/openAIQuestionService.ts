@@ -594,8 +594,6 @@ Reglas:
 5. Siempre transmite entusiasmo sobre el proceso y lo especial que es crear su biografía.
 6. Si el usuario está listo para comenzar, confirma el inicio con entusiasmo.
 
-Tu tono debe ser amigable y alentador, siempre mostrando paciencia y disposición para resolver cualquier duda.
-
 Termina siempre con una pregunta para continuar el proceso. EJEMPLO: Te parece si avanzamos a la primera pregunta?
 
   `;
@@ -1023,4 +1021,197 @@ Por favor, mejora el texto siguiendo las instrucciones proporcionadas, mantenien
     return currentText;
   }
 }
+
+export const filterIntentionNextQuestion = async (question: string, history: any[], message: string): Promise<string> => {
+  const systemPrompt = `
+Eres un experto en la detección de intenciones en conversaciones. Tu tarea es clasificar la intención del usuario en una de tres categorías EXACTAS.
+
+REGLAS ESTRICTAS DE RESPUESTA:
+- DEBES responder ÚNICAMENTE con una de estas tres palabras: "next", "finish", o "continue"
+- NO agregues explicaciones ni texto adicional
+
+CRITERIOS DE CLASIFICACIÓN:
+
+1. Responde "next" si:
+   - Solicita explícitamente cambiar de pregunta
+   - Muestra frustración o aburrimiento con el tema actual
+   - Considera que el usuario no le gusta la pregunta actual
+   Ejemplos: 
+   - "Mejor pasemos a otra cosa"
+   - "No, sé poco. Mejor cambiemos de tema."
+   - "No sé qué más decir de esto, pasemos a otra cosa"
+
+2. Responde "finish" si:
+   - El usuario expresa deseo de terminar la conversación
+   - Muestra signos claros de cansancio o saturación
+   - Indica que quiere continuar en otro momento
+   Ejemplos:
+   - "Continuemos mañana mejor"
+   - "Necesito un descanso"
+   - "Ya no puedo pensar más por hoy"
+
+3. Responde "continue" en cualquier otro caso. CUALQUIER OTRA INTENCIÓN. 
+
+IMPORTANTE:
+- En caso de duda, SIEMPRE responde "continue"
+- Si el mensaje contiene múltiples intenciones, prioriza "continue"
+- Considera el contexto completo del historial, no solo el último mensaje
+
+SUPER IMPORTANTE:
+- Considera el contexto completo del historial, porque la respuesta puede tener una connotación negativa, pero refiriendose a alguna parte de la conversación, puede ser una respuesta a la conversación, no a la pregunta geeneral en sí.
+- "no se que mas responderte" no es suficiente para responder next, porque puede ser una respuesta a la pregunta, pero también puede ser una respuesta a la conversación. Debe ser claro que no le gusta la pregunta actual.
+`;
+
+  const userPrompt = `
+Pregunta: "${question}"
+Historial: ${history.map(msg => `${msg.type === 'incoming' ? 'Usuario: ' : 'Asistente: '}${msg.message}`).join('\n')}
+Mensaje del usuario: "${message}"
+
+Por favor, determina la intención del usuario y responde con una de las siguientes opciones:
+- "next": El usuario quiere pasar a la siguiente pregunta, ya sea que no le gusta la pregunta actual (explicitamente) o te lo dice, no ambiguo.
+- "finish": El usuario quiere terminar la conversación, o ya no quiere hablar más.
+- "continue": Cualquier otro caso.
+`;
+
+  try {
+    const completion = await openai.chat.completions.create({
+      messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
+      model: "gpt-4o-mini",
+      temperature: 0.2,
+      max_tokens: 100
+    });
+
+    const response = completion.choices[0]?.message?.content?.toLowerCase() || 'continue';
+    if (!['next', 'finish', 'continue'].includes(response)) {
+      return 'continue';
+    }
+    return response;
+  } catch (error) {
+    console.error('Error al filtrar la intención:', error);
+    return 'continue';
+  }
+}
+
+export const generateFinishDayMessage = async (question: string, history: any[], message: string): Promise<string> => {
+  const systemPrompt = `
+Eres un asistente empático que genera mensajes de despedida personalizados. Tu tarea es responder al usuario cuando indica que necesita hacer una pausa o terminar la conversación.
+
+REGLAS:
+1. Mensaje MÁXIMO de 2 líneas
+2. SIEMPRE incluir UN emoji al final
+3. La primera línea debe hacer eco al sentimiento del usuario
+4. La segunda línea debe ser una invitación abierta a retomar
+5. NO usar frases genéricas
+
+PATRONES DE RESPUESTA según el contexto:
+
+Si el usuario expresa CANSANCIO (ej: "Ya no puedo pensar más"):
+- "Claro, compartir recuerdos puede ser agotador. Descansa y retomamos cuando recuperes energías 🌙"
+- "Entiendo que necesites un respiro. Estaré aquí cuando te sientas con más energía ✨"
+
+Si el usuario sugiere CONTINUAR OTRO DÍA (ej: "Mejor mañana"):
+- "¡Por supuesto! Has compartido mucho hoy. Nos vemos mañana para seguir conversando 💫"
+- "Perfecto, retomemos mañana con energías renovadas. ¡Que descanses! 🌟"
+
+Si el usuario pide un DESCANSO (ej: "Necesito un break"):
+- "Tómate el tiempo que necesites para hacer una pausa. Seguimos cuando te sientas lista 🍃"
+- "Un descanso siempre viene bien. Estaré aquí cuando quieras continuar ⭐"
+
+IMPORTANTE: 
+- Mantén el mismo tono y energía que usa el usuario
+- Si menciona "mañana", confirma que continuarán mañana
+- Si es indefinido, deja la invitación abierta
+- NUNCA uses más de 2 líneas
+- SIEMPRE termina con UN emoji
+`;
+
+  const userPrompt = `
+Último mensaje del usuario: "${message}"
+
+Contexto de la conversación (últimos mensajes):
+${history.map(msg => `${msg.type === 'incoming' ? 'Usuario: ' : 'Asistente: '}${msg.message}`).join('\n')}
+
+Genera un mensaje de despedida que:
+1. Haga eco al sentimiento específico del usuario (cansancio/pausa/continuar mañana)
+2. Mantenga el mismo tono
+3. Incluya una invitación a retomar alineada con lo que sugiere el usuario
+`;
+
+  try {
+    const completion = await openai.chat.completions.create({
+      messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
+      model: "gpt-4o-mini",
+      temperature: 0.7,
+      max_tokens: 150
+    });
+
+    return completion.choices[0]?.message?.content || 
+      '¡Hola! Me alegra verte de nuevo. ¿Te gustaría continuar compartiendo tus recuerdos? 😊';
+
+  } catch (error) {
+    console.error('Error al generar mensaje de continuación:', error);
+    return '¡Hola! ¿Continuamos con nuestra conversación? 😊';
+  }
+};
+
+export const improveTranscription = async (text: string): Promise<string> => {
+  const systemPrompt = `
+Eres un experto en biografías y narrativas personales. Tu tarea es mejorar y estructurar un texto hablado donde una persona comparte hitos importantes de su vida. El texto debe servir como base para crear capítulos biográficos significativos.
+
+CONTEXTO:
+Se le ha pedido al usuario que comparta hitos importantes de su vida, similar a estos ejemplos:
+- "Estudió en una escuela pequeña en su ciudad natal"
+- "Cambió de país para buscar nuevas oportunidades"
+- "Superó un desafío personal que lo ayudó a crecer"
+
+OBJETIVOS:
+1. Identificar y estructurar claramente los hitos de vida mencionados
+2. Mantener la cronología y el orden temporal cuando sea evidente
+3. Preservar detalles específicos de lugares, fechas y eventos
+4. Conservar el tono personal y emocional del narrador
+
+REGLAS IMPORTANTES:
+- NO agregues información que no esté en el texto original
+- Mantén el significado y la intención original
+- Conserva nombres de lugares, personas y fechas exactamente como fueron mencionados
+- Estructura cada hito como una oración clara y completa
+- Si hay eventos relacionados, agrúpalos manteniendo su conexión
+
+FORMATO DE SALIDA:
+- Presenta cada hito en una línea separada
+- Usa viñetas (-) para cada hito principal
+- Si un hito tiene detalles adicionales, inclúyelos en la misma línea
+- Mantén un formato consistente para facilitar la creación de capítulos
+
+EJEMPLO DE FORMATO:
+- Nací y crecí en Valparaíso, donde estudié en el Colegio San Pedro
+- A los 18 años me mudé a Santiago para estudiar medicina
+- Durante la universidad, superé una enfermedad que cambió mi perspectiva de vida
+`;
+
+  const userPrompt = `
+Por favor, estructura los siguientes hitos de vida compartidos por el usuario:
+
+"${text}"
+
+Organiza el texto en hitos claros y significativos que puedan servir como base para crear capítulos de una biografía.
+`;
+
+  try {
+    const completion = await openai.chat.completions.create({
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      model: "gpt-4o-mini",
+      temperature: 0.3,
+      max_tokens: 1000
+    });
+
+    return completion.choices[0]?.message?.content || text;
+  } catch (error) {
+    console.error('Error al mejorar la transcripción:', error);
+    return text; // Si hay error, devolvemos el texto original
+  }
+};
 

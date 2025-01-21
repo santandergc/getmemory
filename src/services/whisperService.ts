@@ -1,5 +1,6 @@
 import { OpenAI } from 'openai';
 import fetch from 'node-fetch';
+import { improveTranscription } from './openAIQuestionService';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_KEY
@@ -8,7 +9,6 @@ const openai = new OpenAI({
 if (!process.env.OPENAI_KEY) {
   throw new Error('La clave API de OpenAI no está configurada');
 }
-
 
 const fetchAudioFile = async (audioUrl: string) => {
   try {
@@ -22,7 +22,7 @@ const fetchAudioFile = async (audioUrl: string) => {
       throw new Error(`Error al descargar el archivo: ${response.statusText}`);
     }
 
-    const audioBuffer = await response.arrayBuffer(); // Descargar como buffer binario
+    const audioBuffer = await response.arrayBuffer();
     return audioBuffer;
   } catch (error) {
     console.error('Error al descargar el archivo de audio:', error);
@@ -30,30 +30,34 @@ const fetchAudioFile = async (audioUrl: string) => {
   }
 };
 
-
 export const transcribeAudio = async (audioUrl: string): Promise<string> => {
   try {
-    // Descargar el archivo de audio desde la URL
     const audioBuffer = await fetchAudioFile(audioUrl);
-
-    // Crear un objeto File desde el buffer
     const audioFile = new File(
       [audioBuffer], 
       'audio.ogg',
       { type: 'audio/ogg' }
     );
+    return await transcribeFile(audioFile);
+  } catch (error) {
+    console.error('Error al transcribir el audio:', error);
+    throw error;
+  }
+};
 
-    // Transcribir usando Whisper API
+export const transcribeFile = async (audioFile: File): Promise<string> => {
+  try {
     const transcription = await openai.audio.transcriptions.create({
       file: audioFile,
       model: 'whisper-1',
       language: 'es'
     });
 
-    return transcription.text;
-
+    // Mejorar el texto usando GPT-4o-mini
+    const improvedText = await improveTranscription(transcription.text);
+    return improvedText;
   } catch (error) {
-    console.error('Error al transcribir el audio:', error);
+    console.error('Error al transcribir el archivo:', error);
     throw error;
   }
 };
