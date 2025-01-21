@@ -8,7 +8,7 @@ export const activateUser = async (user: any, fatherId: ObjectId) => {
     whatsappNumber: user.info.phone,
     fullName: user.info.fullName,
     birthInfo: user.info.birthDate,
-    sex: user.info.gender,
+    gender: user.info.gender,
     currentQuestion: 0,
     currentQuestionId: 0,
     currentStage: "onboarding",

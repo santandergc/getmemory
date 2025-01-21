@@ -196,7 +196,7 @@ export class QuestionService {
         await new Promise(resolve => setTimeout(resolve, 2000)); // Pequeña pausa entre mensajes
         await sendWhatsAppMessage(user.whatsappNumber, questionsList);
         await new Promise(resolve => setTimeout(resolve, 1000));
-        await sendWhatsAppMessage(user.whatsappNumber, "¿Comenzamos con la primera pregunta? 😊");
+        await sendWhatsAppMessage(user.whatsappNumber, user.gender === 'female' ? "¿Estás lista para comenzar con la primera pregunta? 😊" : "¿Estás listo para comenzar con la primera pregunta? 😊");
       } else {
         // Obtener el capítulo actual
         const currentQuestion = user.questions[user.currentQuestionId];
@@ -244,9 +244,9 @@ export class QuestionService {
       await new Promise(resolve => setTimeout(resolve, 2000)); // Pequeña pausa entre mensajes
       await sendWhatsAppMessage(user.whatsappNumber, questionsList);
       await new Promise(resolve => setTimeout(resolve, 1000));
-      await sendWhatsAppMessage(user.whatsappNumber, "¿Comenzamos con la primera pregunta? 😊");
+      await sendWhatsAppMessage(user.whatsappNumber, "¿Estás listo para comenzar? 😊");
       currentQuestion.conversationHistory.push({
-        message: chapterIntro,
+        message: `${chapterIntro}\n\n${questionsList}`,
         type: 'outgoing',
         timestamp: new Date(),
       });
