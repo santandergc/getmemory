@@ -38,7 +38,13 @@ export const transcribeAudio = async (audioUrl: string): Promise<string> => {
       'audio.ogg',
       { type: 'audio/ogg' }
     );
-    return await transcribeFile(audioFile);
+    const transcription = await openai.audio.transcriptions.create({
+      file: audioFile,
+      model: 'whisper-1',
+      language: 'es'
+    });
+
+    return transcription.text;
   } catch (error) {
     console.error('Error al transcribir el audio:', error);
     throw error;
