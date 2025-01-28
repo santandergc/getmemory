@@ -1034,8 +1034,7 @@ CRITERIOS DE CLASIFICACIÓN:
 
 1. Responde "next" si:
    - Solicita explícitamente cambiar de pregunta
-   - Muestra frustración o aburrimiento con el tema actual
-   - Considera que el usuario no le gusta la pregunta actual
+   - Considera que el usuario no le gusta la pregunta actual, te pide que cambies de pregunta. Si es de tema, no lo consideres valido, solo si es de pregunta.
    Ejemplos: 
    - "Mejor pasemos a otra cosa"
    - "No, sé poco. Mejor cambiemos de tema."
