@@ -307,6 +307,12 @@ export class QuestionService {
     } else if (userIntent.toLowerCase().includes('finish')) {
       const response = await generateFinishDayMessage(currentQuestion.text, lastFiveMessages, message);
       await sendWhatsAppMessage(user.whatsappNumber, response);
+      currentQuestion.conversationHistory.push({
+        message: response,
+        type: 'outgoing',
+        timestamp: new Date(),
+      });
+      await user.save();
       return '';
     }
     
