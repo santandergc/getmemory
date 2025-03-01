@@ -168,11 +168,11 @@ export async function handleIncomingMessageFreeTrial(req: Request, res: Response
         await new Promise(resolve => setTimeout(resolve, 7000)); 
         await sendWhatsAppMessage(
           user.whatsappNumber,
-          'Me encantaría que te unieras a Memori, para conmemor tu historia y la de tus seres queridos para siempre.\n\nEn el siguiente link puedes acceder a la tuya 😍\n\nhttps://buy.stripe.com/test_7sI5ongqZaZfgMM288',
+          'Me encantaría que te unieras a Memori, para conmemor tu historia y la de tus seres queridos para siempre.\n\nEn el siguiente link puedes acceder a la tuya 😍\n\nhttps://buy.stripe.com/aEUcNTe9Ih0q2Aw7ss',
           NUMBER
         );
         user.history.push({
-          message: ' Qué te ha parecido la experiencia? Es muy simple, pero espero que te haya servido para recordar cosas importantes de tu infancia. \n\nTe dejo un ejemplo reducido de una biografía creada por Memori 😊\n\n https://getmemori.org/biography\n\n Me encantaría que te unieras a Memori, para conmemor tu historia y la de tus seres queridos para siempre.\n\nEn el siguiente link puedes acceder a la tuya 😍\n\n https://buy.stripe.com/test_7sI5ongqZaZfgMM288',
+          message: ' Qué te ha parecido la experiencia? Es muy simple, pero espero que te haya servido para recordar cosas importantes de tu infancia. \n\nTe dejo un ejemplo reducido de una biografía creada por Memori 😊\n\n https://getmemori.org/biography\n\n Me encantaría que te unieras a Memori, para conmemor tu historia y la de tus seres queridos para siempre.\n\nEn el siguiente link puedes acceder a la tuya 😍\n\n https://buy.stripe.com/aEUcNTe9Ih0q2Aw7ss',
           type: 'outgoing',
           timestamp: new Date(),
         });
